@@ -861,6 +861,225 @@ function Install-GoogleQuickShare {
 }
 #endregion
 
+#region Syncthing Installation
+function Install-Syncthing {
+    Write-Log "Starting Syncthing installation..." "Info" "Syncthing"
+    
+    try {
+        # Check if Syncthing is already installed via Scoop
+        $syncthingInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "syncthing") {
+                $syncthingInstalled = $true
+                Write-Log "Syncthing is already installed via Scoop. Skipping installation." "Info" "Syncthing"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if syncthing command is available
+        if (-not $syncthingInstalled -and (Test-Command "syncthing")) {
+            Write-Log "Syncthing is already installed. Skipping installation." "Info" "Syncthing"
+            return $true
+        }
+        
+        if ($syncthingInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install Syncthing." "Error" "Syncthing"
+            return $false
+        }
+        
+        # Install Syncthing using Scoop main bucket
+        Write-Log "Installing Syncthing using Scoop..." "Info" "Syncthing"
+        scoop install syncthing
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "syncthing") {
+            Write-Log "Syncthing installed successfully via Scoop!" "Info" "Syncthing"
+            return $true
+        } else {
+            Write-Log "Syncthing installation failed - not found in Scoop list" "Error" "Syncthing"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Syncthing: $($_.Exception.Message)" "Error" "Syncthing"
+        return $false
+    }
+}
+#endregion
+
+#region VLC Installation
+function Install-VLC {
+    Write-Log "Starting VLC installation..." "Info" "VLC"
+    
+    try {
+        # Check if VLC is already installed via Scoop
+        $vlcInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "vlc") {
+                $vlcInstalled = $true
+                Write-Log "VLC is already installed via Scoop. Skipping installation." "Info" "VLC"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if vlc command is available
+        if (-not $vlcInstalled -and (Test-Command "vlc")) {
+            Write-Log "VLC is already installed. Skipping installation." "Info" "VLC"
+            return $true
+        }
+        
+        if ($vlcInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install VLC." "Error" "VLC"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install VLC." "Error" "VLC"
+            return $false
+        }
+        
+        # Install VLC using Scoop extras bucket
+        Write-Log "Installing VLC using Scoop extras bucket..." "Info" "VLC"
+        scoop install extras/vlc
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "vlc") {
+            Write-Log "VLC installed successfully via Scoop!" "Info" "VLC"
+            return $true
+        } else {
+            Write-Log "VLC installation failed - not found in Scoop list" "Error" "VLC"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install VLC: $($_.Exception.Message)" "Error" "VLC"
+        return $false
+    }
+}
+#endregion
+
+#region Zalo Installation
+function Install-Zalo {
+    Write-Log "Starting Zalo installation..." "Info" "Zalo"
+    
+    try {
+        # Check if Zalo is already installed
+        $zaloInstalled = $false
+        
+        # Check if Zalo is installed via Scoop
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "zalo") {
+                $zaloInstalled = $true
+                Write-Log "Zalo is already installed via Scoop. Skipping installation." "Info" "Zalo"
+            }
+        } catch {
+            # If scoop list fails, continue with other checks
+        }
+        
+        # Check if Zalo is installed in Program Files
+        $zaloPath = "${env:ProgramFiles}\Zalo\Zalo.exe"
+        if (Test-Path $zaloPath) {
+            $zaloInstalled = $true
+            Write-Log "Zalo is already installed in Program Files. Skipping installation." "Info" "Zalo"
+        }
+        
+        # Check if Zalo is installed in Program Files (x86)
+        $zaloPathX86 = "${env:ProgramFiles(x86)}\Zalo\Zalo.exe"
+        if (Test-Path $zaloPathX86) {
+            $zaloInstalled = $true
+            Write-Log "Zalo is already installed in Program Files (x86). Skipping installation." "Info" "Zalo"
+        }
+        
+        # Check if Zalo is installed in AppData
+        $zaloAppDataPath = "${env:LOCALAPPDATA}\Programs\Zalo\Zalo.exe"
+        if (Test-Path $zaloAppDataPath) {
+            $zaloInstalled = $true
+            Write-Log "Zalo is already installed in AppData. Skipping installation." "Info" "Zalo"
+        }
+        
+        if ($zaloInstalled) {
+            return $true
+        }
+        
+        # Download and install Zalo
+        Write-Log "Downloading Zalo installer..." "Info" "Zalo"
+        $tempDir = [System.IO.Path]::GetTempPath()
+        $installerPath = Join-Path $tempDir "ZaloSetup.exe"
+        
+        try {
+            # Download the installer from Zalo's official download page
+            # The URL redirects to the actual download, so we'll use a more direct approach
+            Write-Log "Attempting to download Zalo from official source..." "Info" "Zalo"
+            
+            # Use PowerShell to download from the Zalo download page
+            $webRequest = Invoke-WebRequest -Uri "https://zalo.me/download/zalo-pc?utm=90000" -UseBasicParsing
+            $downloadUrl = $webRequest.Links | Where-Object { $_.href -like "*.exe" } | Select-Object -First 1 -ExpandProperty href
+            
+            if (-not $downloadUrl) {
+                # Fallback to a direct download approach
+                Write-Log "Direct download URL not found, using alternative method..." "Info" "Zalo"
+                $downloadUrl = "https://zalo.me/download/zalo-pc?utm=90000"
+            }
+            
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+            
+            Write-Log "Installing Zalo..." "Info" "Zalo"
+            
+            # Run the installer silently
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -PassThru
+            
+            if ($process.ExitCode -eq 0) {
+                Write-Log "Zalo installed successfully!" "Info" "Zalo"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                return $true
+            } else {
+                Write-Log "Zalo installation failed with exit code: $($process.ExitCode)" "Error" "Zalo"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to download or install Zalo: $($_.Exception.Message)" "Error" "Zalo"
+            
+            # Clean up the installer if it exists
+            if (Test-Path $installerPath) {
+                Remove-Item $installerPath -Force
+            }
+            
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Zalo: $($_.Exception.Message)" "Error" "Zalo"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -868,7 +1087,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 13
+    $totalSteps = 16
     
     # Step 1: Install Scoop
     Write-Log ("Step 1/{0}: Installing Scoop..." -f $totalSteps) "Info" "Main"
@@ -980,8 +1199,35 @@ function Main {
         Write-Log "✗ Google QuickShare installation failed" "Error" "Main"
     }
     
-    # Step 13: Show Microsoft Office Installation Information
-    Write-Log ("Step 13/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
+    # Step 13: Install Syncthing
+    Write-Log ("Step 13/{0}: Installing Syncthing..." -f $totalSteps) "Info" "Main"
+    if (Install-Syncthing) {
+        $successCount++
+        Write-Log "✓ Syncthing installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Syncthing installation failed" "Error" "Main"
+    }
+    
+    # Step 14: Install VLC
+    Write-Log ("Step 14/{0}: Installing VLC..." -f $totalSteps) "Info" "Main"
+    if (Install-VLC) {
+        $successCount++
+        Write-Log "✓ VLC installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ VLC installation failed" "Error" "Main"
+    }
+    
+    # Step 15: Install Zalo
+    Write-Log ("Step 15/{0}: Installing Zalo..." -f $totalSteps) "Info" "Main"
+    if (Install-Zalo) {
+        $successCount++
+        Write-Log "✓ Zalo installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Zalo installation failed" "Error" "Main"
+    }
+    
+    # Step 16: Show Microsoft Office Installation Information
+    Write-Log ("Step 16/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
     if (Show-MicrosoftOfficeInfo) {
         $successCount++
         Write-Log "✓ Microsoft Office information provided" "Info" "Main"
@@ -1008,9 +1254,12 @@ function Main {
         Write-Log "10. Press 'Alt+Space' to launch Flowlauncher" "Info" "Main"
         Write-Log "11. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
         Write-Log "12. Look for QuickShare in your system tray or Start menu" "Info" "Main"
-        Write-Log "13. Install Microsoft Office manually using the guide above" "Info" "Main"
-        Write-Log "14. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "15. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "13. Run 'syncthing' to launch Syncthing" "Info" "Main"
+        Write-Log "14. Run 'vlc' to launch VLC Media Player" "Info" "Main"
+        Write-Log "15. Look for Zalo in your Start menu or desktop" "Info" "Main"
+        Write-Log "16. Install Microsoft Office manually using the guide above" "Info" "Main"
+        Write-Log "17. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "18. Visit https://scoop.sh/ for more information" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
