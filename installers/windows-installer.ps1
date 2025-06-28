@@ -405,6 +405,219 @@ function Install-Cursor {
 }
 #endregion
 
+#region Notion Installation
+function Install-Notion {
+    Write-Log "Starting Notion installation..." "Info" "Notion"
+    
+    try {
+        # Check if Notion is already installed via Scoop
+        $notionInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "notion") {
+                $notionInstalled = $true
+                Write-Log "Notion is already installed via Scoop. Skipping installation." "Info" "Notion"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if notion command is available
+        if (-not $notionInstalled -and (Test-Command "notion")) {
+            Write-Log "Notion is already installed. Skipping installation." "Info" "Notion"
+            return $true
+        }
+        
+        if ($notionInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install Notion." "Error" "Notion"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install Notion." "Error" "Notion"
+            return $false
+        }
+        
+        # Install Notion using Scoop extras bucket
+        Write-Log "Installing Notion using Scoop extras bucket..." "Info" "Notion"
+        scoop install extras/notion
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "notion") {
+            Write-Log "Notion installed successfully via Scoop!" "Info" "Notion"
+            return $true
+        } else {
+            Write-Log "Notion installation failed - not found in Scoop list" "Error" "Notion"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Notion: $($_.Exception.Message)" "Error" "Notion"
+        return $false
+    }
+}
+#endregion
+
+#region Obsidian Installation
+function Install-Obsidian {
+    Write-Log "Starting Obsidian installation..." "Info" "Obsidian"
+    
+    try {
+        # Check if Obsidian is already installed via Scoop
+        $obsidianInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "obsidian") {
+                $obsidianInstalled = $true
+                Write-Log "Obsidian is already installed via Scoop. Skipping installation." "Info" "Obsidian"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if obsidian command is available
+        if (-not $obsidianInstalled -and (Test-Command "obsidian")) {
+            Write-Log "Obsidian is already installed. Skipping installation." "Info" "Obsidian"
+            return $true
+        }
+        
+        if ($obsidianInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install Obsidian." "Error" "Obsidian"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install Obsidian." "Error" "Obsidian"
+            return $false
+        }
+        
+        # Install Obsidian using Scoop extras bucket
+        Write-Log "Installing Obsidian using Scoop extras bucket..." "Info" "Obsidian"
+        scoop install extras/obsidian
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "obsidian") {
+            Write-Log "Obsidian installed successfully via Scoop!" "Info" "Obsidian"
+            return $true
+        } else {
+            Write-Log "Obsidian installation failed - not found in Scoop list" "Error" "Obsidian"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Obsidian: $($_.Exception.Message)" "Error" "Obsidian"
+        return $false
+    }
+}
+#endregion
+
+#region PowerToys Installation
+function Install-PowerToys {
+    Write-Log "Starting PowerToys installation..." "Info" "PowerToys"
+    
+    try {
+        # Check if PowerToys is already installed via Scoop
+        $powertoysInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "powertoys") {
+                $powertoysInstalled = $true
+                Write-Log "PowerToys is already installed via Scoop. Skipping installation." "Info" "PowerToys"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if powertoys command is available
+        if (-not $powertoysInstalled -and (Test-Command "powertoys")) {
+            Write-Log "PowerToys is already installed. Skipping installation." "Info" "PowerToys"
+            return $true
+        }
+        
+        if ($powertoysInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install PowerToys." "Error" "PowerToys"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install PowerToys." "Error" "PowerToys"
+            return $false
+        }
+        
+        # Install PowerToys using Scoop extras bucket
+        Write-Log "Installing PowerToys using Scoop extras bucket..." "Info" "PowerToys"
+        Write-Log "Note: PowerToys installation may show Windows Store package errors, but the main application should still install successfully." "Warning" "PowerToys"
+        
+        # Capture the output to check for specific errors
+        $installOutput = scoop install extras/powertoys 2>&1 | Out-String
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "powertoys") {
+            Write-Log "PowerToys installed successfully via Scoop!" "Info" "PowerToys"
+            
+            # Check for Windows Store package errors in output
+            if ($installOutput -match "Deployment failed with HRESULT: 0x80073D2E" -or $installOutput -match "package deployment failed") {
+                Write-Log "⚠️  PowerToys installed but some Windows Store components failed to install." "Warning" "PowerToys"
+                Write-Log "This is normal and PowerToys should still work. You can manually install missing components later." "Info" "PowerToys"
+                Write-Log "To install missing components, run: winget install Microsoft.PowerToys" "Info" "PowerToys"
+            }
+            
+            return $true
+        } else {
+            Write-Log "PowerToys installation failed - not found in Scoop list" "Error" "PowerToys"
+            Write-Log "Installation output: $installOutput" "Debug" "PowerToys"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install PowerToys: $($_.Exception.Message)" "Error" "PowerToys"
+        return $false
+    }
+}
+#endregion
+
+#region PowerToys Alternative Installation Information
+function Show-PowerToysAlternativeInfo {
+    Write-Log "=== PowerToys Alternative Installation Methods ===" "Info" "PowerToys"
+    Write-Log "If PowerToys installation via Scoop continues to have issues, try these alternatives:" "Info" "PowerToys"
+    Write-Log " " "Info" "PowerToys"
+    Write-Log "🔧 Alternative Installation Methods:" "Info" "PowerToys"
+    Write-Log "1. Using winget (Windows Package Manager):" "Info" "PowerToys"
+    Write-Log "   winget install Microsoft.PowerToys" "Info" "PowerToys"
+    Write-Log " " "Info" "PowerToys"
+    Write-Log "2. Direct download from Microsoft:" "Info" "PowerToys"
+    Write-Log "   Visit: https://github.com/microsoft/PowerToys/releases" "Info" "PowerToys"
+    Write-Log "   Download the latest .exe installer and run it" "Info" "PowerToys"
+    Write-Log " " "Info" "PowerToys"
+    Write-Log "3. Microsoft Store:" "Info" "PowerToys"
+    Write-Log "   Search for 'PowerToys' in the Microsoft Store" "Info" "PowerToys"
+    Write-Log " " "Info" "PowerToys"
+    Write-Log "💡 Note: The Windows Store package error is common and usually doesn't affect core functionality." "Info" "PowerToys"
+    Write-Log "PowerToys should still work even if some components fail to install." "Info" "PowerToys"
+    Write-Log "=== End of PowerToys Alternative Installation Methods ===" "Info" "PowerToys"
+    
+    return $true
+}
+#endregion
+
 #region Microsoft Office Installation Information
 function Show-MicrosoftOfficeInfo {
     Write-Log "=== Microsoft Office Home and Student 2021 Installation Guide ===" "Info" "Office"
@@ -436,6 +649,218 @@ function Show-MicrosoftOfficeInfo {
 }
 #endregion
 
+#region Flowlauncher Installation
+function Install-Flowlauncher {
+    Write-Log "Starting Flowlauncher installation..." "Info" "Flowlauncher"
+    
+    try {
+        # Check if Flowlauncher is already installed via Scoop
+        $flowlauncherInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "flow-launcher") {
+                $flowlauncherInstalled = $true
+                Write-Log "Flowlauncher is already installed via Scoop. Skipping installation." "Info" "Flowlauncher"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if flowlauncher command is available
+        if (-not $flowlauncherInstalled -and (Test-Command "flowlauncher")) {
+            Write-Log "Flowlauncher is already installed. Skipping installation." "Info" "Flowlauncher"
+            return $true
+        }
+        
+        if ($flowlauncherInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install Flowlauncher." "Error" "Flowlauncher"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install Flowlauncher." "Error" "Flowlauncher"
+            return $false
+        }
+        
+        # Install Flowlauncher using Scoop extras bucket
+        Write-Log "Installing Flowlauncher using Scoop extras bucket..." "Info" "Flowlauncher"
+        scoop install extras/flow-launcher
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "flow-launcher") {
+            Write-Log "Flowlauncher installed successfully via Scoop!" "Info" "Flowlauncher"
+            return $true
+        } else {
+            Write-Log "Flowlauncher installation failed - not found in Scoop list" "Error" "Flowlauncher"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Flowlauncher: $($_.Exception.Message)" "Error" "Flowlauncher"
+        return $false
+    }
+}
+#endregion
+
+#region ProtonVPN Installation
+function Install-ProtonVPN {
+    Write-Log "Starting ProtonVPN installation..." "Info" "ProtonVPN"
+    
+    try {
+        # Check if ProtonVPN is already installed via Scoop
+        $protonvpnInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "protonvpn-np") {
+                $protonvpnInstalled = $true
+                Write-Log "ProtonVPN is already installed via Scoop. Skipping installation." "Info" "ProtonVPN"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if protonvpn command is available
+        if (-not $protonvpnInstalled -and (Test-Command "protonvpn")) {
+            Write-Log "ProtonVPN is already installed. Skipping installation." "Info" "ProtonVPN"
+            return $true
+        }
+        
+        if ($protonvpnInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install ProtonVPN." "Error" "ProtonVPN"
+            return $false
+        }
+        
+        # Add nonportable bucket if needed
+        Write-Log "Adding nonportable bucket to Scoop..." "Debug" "ProtonVPN"
+        try {
+            $buckets = scoop bucket list 2>$null
+            if (-not ($buckets -match "nonportable")) {
+                Write-Log "Adding nonportable bucket to Scoop..." "Info" "ProtonVPN"
+                scoop bucket add nonportable
+            }
+        } catch {
+            Write-Log "Failed to add nonportable bucket: $($_.Exception.Message)" "Error" "ProtonVPN"
+            return $false
+        }
+        
+        # Install ProtonVPN using Scoop nonportable bucket
+        Write-Log "Installing ProtonVPN using Scoop nonportable bucket..." "Info" "ProtonVPN"
+        scoop install nonportable/protonvpn-np
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "protonvpn-np") {
+            Write-Log "ProtonVPN installed successfully via Scoop!" "Info" "ProtonVPN"
+            return $true
+        } else {
+            Write-Log "ProtonVPN installation failed - not found in Scoop list" "Error" "ProtonVPN"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install ProtonVPN: $($_.Exception.Message)" "Error" "ProtonVPN"
+        return $false
+    }
+}
+#endregion
+
+#region Google QuickShare Installation
+function Install-GoogleQuickShare {
+    Write-Log "Starting Google QuickShare installation..." "Info" "QuickShare"
+    
+    try {
+        # Check if QuickShare is already installed
+        $quickShareInstalled = $false
+        
+        # Check if QuickShare is installed via Scoop
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "quickshare") {
+                $quickShareInstalled = $true
+                Write-Log "Google QuickShare is already installed via Scoop. Skipping installation." "Info" "QuickShare"
+            }
+        } catch {
+            # If scoop list fails, continue with other checks
+        }
+        
+        # Check if QuickShare is installed in Program Files
+        $quickSharePath = "${env:ProgramFiles}\Google\QuickShare\QuickShare.exe"
+        if (Test-Path $quickSharePath) {
+            $quickShareInstalled = $true
+            Write-Log "Google QuickShare is already installed in Program Files. Skipping installation." "Info" "QuickShare"
+        }
+        
+        # Check if QuickShare is installed in Program Files (x86)
+        $quickSharePathX86 = "${env:ProgramFiles(x86)}\Google\QuickShare\QuickShare.exe"
+        if (Test-Path $quickSharePathX86) {
+            $quickShareInstalled = $true
+            Write-Log "Google QuickShare is already installed in Program Files (x86). Skipping installation." "Info" "QuickShare"
+        }
+        
+        if ($quickShareInstalled) {
+            return $true
+        }
+        
+        # Download and install QuickShare
+        Write-Log "Downloading Google QuickShare installer..." "Info" "QuickShare"
+        $tempDir = [System.IO.Path]::GetTempPath()
+        $installerPath = Join-Path $tempDir "QuickShareSetup.exe"
+        
+        try {
+            # Download the installer
+            Invoke-WebRequest -Uri "https://dl.google.com/tag/s/appguid%3D%7B232066FE-FF4D-4C25-83B4-3F8747CF7E3A%7D%26iid%3D%7B3E33A1CF-1170-4488-4648-B015D012F4A9%7D%26lang%3Den%26browser%3D4%26usagestats%3D0%26appname%3DNearby%2520Better%2520Together%26needsadmin%3Dtrue/better_together/QuickShareSetup.exe" -OutFile $installerPath
+            
+            Write-Log "Installing Google QuickShare..." "Info" "QuickShare"
+            
+            # Run the installer silently
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -PassThru
+            
+            if ($process.ExitCode -eq 0) {
+                Write-Log "Google QuickShare installed successfully!" "Info" "QuickShare"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                return $true
+            } else {
+                Write-Log "Google QuickShare installation failed with exit code: $($process.ExitCode)" "Error" "QuickShare"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to download or install Google QuickShare: $($_.Exception.Message)" "Error" "QuickShare"
+            
+            # Clean up the installer if it exists
+            if (Test-Path $installerPath) {
+                Remove-Item $installerPath -Force
+            }
+            
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Google QuickShare: $($_.Exception.Message)" "Error" "QuickShare"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -443,7 +868,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 7
+    $totalSteps = 13
     
     # Step 1: Install Scoop
     Write-Log ("Step 1/{0}: Installing Scoop..." -f $totalSteps) "Info" "Main"
@@ -499,8 +924,64 @@ function Main {
         Write-Log "✗ Google Chrome installation failed" "Error" "Main"
     }
     
-    # Step 7: Show Microsoft Office Installation Information
-    Write-Log ("Step 7/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
+    # Step 7: Install Notion
+    Write-Log ("Step 7/{0}: Installing Notion..." -f $totalSteps) "Info" "Main"
+    if (Install-Notion) {
+        $successCount++
+        Write-Log "✓ Notion installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Notion installation failed" "Error" "Main"
+    }
+    
+    # Step 8: Install Obsidian
+    Write-Log ("Step 8/{0}: Installing Obsidian..." -f $totalSteps) "Info" "Main"
+    if (Install-Obsidian) {
+        $successCount++
+        Write-Log "✓ Obsidian installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Obsidian installation failed" "Error" "Main"
+    }
+    
+    # Step 9: Install PowerToys
+    Write-Log ("Step 9/{0}: Installing PowerToys..." -f $totalSteps) "Info" "Main"
+    if (Install-PowerToys) {
+        $successCount++
+        Write-Log "✓ PowerToys installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ PowerToys installation failed" "Error" "Main"
+        Write-Log "Showing alternative installation methods..." "Info" "Main"
+        Show-PowerToysAlternativeInfo
+    }
+    
+    # Step 10: Install Flowlauncher
+    Write-Log ("Step 10/{0}: Installing Flowlauncher..." -f $totalSteps) "Info" "Main"
+    if (Install-Flowlauncher) {
+        $successCount++
+        Write-Log "✓ Flowlauncher installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Flowlauncher installation failed" "Error" "Main"
+    }
+    
+    # Step 11: Install ProtonVPN
+    Write-Log ("Step 11/{0}: Installing ProtonVPN..." -f $totalSteps) "Info" "Main"
+    if (Install-ProtonVPN) {
+        $successCount++
+        Write-Log "✓ ProtonVPN installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ ProtonVPN installation failed" "Error" "Main"
+    }
+    
+    # Step 12: Install Google QuickShare
+    Write-Log ("Step 12/{0}: Installing Google QuickShare..." -f $totalSteps) "Info" "Main"
+    if (Install-GoogleQuickShare) {
+        $successCount++
+        Write-Log "✓ Google QuickShare installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Google QuickShare installation failed" "Error" "Main"
+    }
+    
+    # Step 13: Show Microsoft Office Installation Information
+    Write-Log ("Step 13/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
     if (Show-MicrosoftOfficeInfo) {
         $successCount++
         Write-Log "✓ Microsoft Office information provided" "Info" "Main"
@@ -521,9 +1002,15 @@ function Main {
         Write-Log "4. Run 'cursor' to launch Cursor AI Editor" "Info" "Main"
         Write-Log "5. Run 'discord' to launch Discord" "Info" "Main"
         Write-Log "6. Run 'chrome' to launch Google Chrome" "Info" "Main"
-        Write-Log "7. Install Microsoft Office manually using the guide above" "Info" "Main"
-        Write-Log "8. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "9. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "7. Run 'notion' to launch Notion" "Info" "Main"
+        Write-Log "8. Run 'obsidian' to launch Obsidian" "Info" "Main"
+        Write-Log "9. Run 'powertoys' to launch PowerToys" "Info" "Main"
+        Write-Log "10. Press 'Alt+Space' to launch Flowlauncher" "Info" "Main"
+        Write-Log "11. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
+        Write-Log "12. Look for QuickShare in your system tray or Start menu" "Info" "Main"
+        Write-Log "13. Install Microsoft Office manually using the guide above" "Info" "Main"
+        Write-Log "14. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "15. Visit https://scoop.sh/ for more information" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"

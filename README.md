@@ -76,7 +76,7 @@ Once the installation is complete, you can:
 
 ## 📁 Repository Structure
 
-```
+```txt
 dotfiles-windows/
 ├── installers/
 │   └── windows-installer.ps1    # Main installation script
