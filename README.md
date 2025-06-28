@@ -9,8 +9,13 @@ This repository provides a streamlined way to set up a complete Windows developm
 - **Package Management**: Scoop for easy software installation
 - **Development Tools**: Git for version control
 - **Code Editors**: VSCode and Cursor AI Editor
-- **Communication**: Discord for team collaboration
+- **Productivity**: Notion and Obsidian for note-taking
+- **Communication**: Discord and Zalo for team collaboration
 - **Web Browser**: Google Chrome for development and browsing
+- **Media**: VLC Media Player for multimedia
+- **Utilities**: PowerToys, Flowlauncher, and Syncthing
+- **Security**: ProtonVPN for secure browsing
+- **File Sharing**: Google QuickShare for easy file transfer
 
 ## 📋 Prerequisites
 
@@ -53,6 +58,16 @@ The installer will set up the following tools in order:
 4. **Cursor AI Editor** - AI-powered code editor
 5. **Discord** - Communication platform
 6. **Google Chrome** - Web browser
+7. **Notion** - Productivity and note-taking
+8. **Obsidian** - Knowledge management
+9. **PowerToys** - Windows utilities
+10. **Flowlauncher** - Application launcher
+11. **ProtonVPN** - VPN service
+12. **Google QuickShare** - File sharing
+13. **Syncthing** - File synchronization
+14. **VLC** - Media player
+15. **Zalo** - Vietnamese messaging app
+16. **Microsoft Office** - Manual installation guide
 
 ## 🎯 After Installation
 
@@ -64,7 +79,16 @@ Once the installation is complete, you can:
 - Launch Cursor AI Editor with `cursor` command
 - Launch Discord with `discord` command
 - Launch Google Chrome with `chrome` command
-- Run `scoop help` to see available commands
+- Launch Notion with `notion` command
+- Launch Obsidian with `obsidian` command
+- Launch PowerToys with `powertoys` command
+- Press `Alt+Space` to launch Flowlauncher
+- Launch ProtonVPN with `protonvpn` command
+- Look for QuickShare in system tray
+- Launch Syncthing with `syncthing` command
+- Launch VLC with `vlc` command
+- Find Zalo in Start menu
+- Install Microsoft Office manually using the provided guide
 
 ## 🔧 Script Features
 
@@ -72,7 +96,9 @@ Once the installation is complete, you can:
 - **Error Handling**: Comprehensive error handling and logging
 - **Progress Tracking**: Step-by-step progress with success/failure indicators
 - **Logging Levels**: Configurable logging (Debug, Info, Warning, Error)
-- **Bucket Management**: Smart Scoop bucket management for extras
+- **Smart Bucket Management**: Automatic Scoop bucket management
+- **Mixed Installation Methods**: Combines Scoop packages and direct downloads
+- **Automatic Cleanup**: Removes temporary installers after installation
 
 ## 📁 Repository Structure
 
@@ -101,6 +127,9 @@ This project is open source and available under the [MIT License](LICENSE).
 - [VSCode](https://code.visualstudio.com/) - Code editor
 - [Cursor](https://cursor.sh/) - AI-powered editor
 - [Discord](https://discord.com/) - Communication platform
+- [Zalo](https://zalo.me/) - Vietnamese messaging platform
+- [VLC](https://www.videolan.org/) - Media player
+- [Syncthing](https://syncthing.net/) - File synchronization
 
 ---
 

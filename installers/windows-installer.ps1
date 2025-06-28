@@ -708,6 +708,87 @@ function Install-Flowlauncher {
 }
 #endregion
 
+#region FlowLauncher Settings Configuration
+function Configure-FlowLauncherSettings {
+    Write-Log "Starting FlowLauncher settings configuration..." "Info" "FlowLauncherConfig"
+    
+    try {
+        # Define paths
+        $dotfilesSettingsPath = "C:\Users\nmdex\.dotfiles-windows\.config\FlowLauncher\Settings.json"
+        $flowlauncherSettingsPath = "C:\Users\nmdex\scoop\apps\flow-launcher\current\app-1.20.1\UserData\Settings\Settings.json"
+        $flowlauncherSettingsDir = Split-Path $flowlauncherSettingsPath -Parent
+        
+        # Check if FlowLauncher is installed
+        if (-not (Test-Command "flowlauncher")) {
+            Write-Log "FlowLauncher is not installed. Cannot configure settings." "Error" "FlowLauncherConfig"
+            return $false
+        }
+        
+        # Check if dotfiles settings file exists
+        if (-not (Test-Path $dotfilesSettingsPath)) {
+            Write-Log "Dotfiles settings file not found at: $dotfilesSettingsPath" "Error" "FlowLauncherConfig"
+            Write-Log "Please ensure the .config/FlowLauncher/Settings.json file exists in your dotfiles repository." "Error" "FlowLauncherConfig"
+            return $false
+        }
+        
+        # Check if FlowLauncher settings directory exists
+        if (-not (Test-Path $flowlauncherSettingsDir)) {
+            Write-Log "FlowLauncher settings directory not found at: $flowlauncherSettingsDir" "Error" "FlowLauncherConfig"
+            Write-Log "FlowLauncher may not be properly installed or the path has changed." "Error" "FlowLauncherConfig"
+            return $false
+        }
+        
+        # Check if symbolic link already exists
+        if (Test-Path $flowlauncherSettingsPath) {
+            $existingItem = Get-Item $flowlauncherSettingsPath -ErrorAction SilentlyContinue
+            if ($existingItem.LinkType -eq "SymbolicLink") {
+                $targetPath = $existingItem.Target
+                if ($targetPath -eq $dotfilesSettingsPath) {
+                    Write-Log "Symbolic link already exists and points to the correct dotfiles path. Skipping configuration." "Info" "FlowLauncherConfig"
+                    return $true
+                } else {
+                    Write-Log "Symbolic link exists but points to different path: $targetPath" "Warning" "FlowLauncherConfig"
+                    Write-Log "Removing existing symbolic link..." "Info" "FlowLauncherConfig"
+                    Remove-Item $flowlauncherSettingsPath -Force
+                }
+            } else {
+                Write-Log "Settings.json exists but is not a symbolic link. Creating backup..." "Info" "FlowLauncherConfig"
+                $backupPath = "$flowlauncherSettingsPath.backup"
+                Copy-Item $flowlauncherSettingsPath $backupPath -Force
+                Write-Log "Backup created at: $backupPath" "Info" "FlowLauncherConfig"
+                Remove-Item $flowlauncherSettingsPath -Force
+            }
+        }
+        
+        # Create symbolic link
+        Write-Log "Creating symbolic link from dotfiles to FlowLauncher settings..." "Info" "FlowLauncherConfig"
+        $result = New-Item -ItemType SymbolicLink -Path $flowlauncherSettingsPath -Target $dotfilesSettingsPath -ErrorAction Stop
+        
+        if ($result -and (Test-Path $flowlauncherSettingsPath)) {
+            Write-Log "Symbolic link created successfully!" "Info" "FlowLauncherConfig"
+            Write-Log "FlowLauncher settings are now synchronized with your dotfiles repository." "Info" "FlowLauncherConfig"
+            
+            # Verify the link works
+            try {
+                $testContent = Get-Content $flowlauncherSettingsPath -TotalCount 1 -ErrorAction Stop
+                Write-Log "Symbolic link verification successful - settings file is accessible." "Info" "FlowLauncherConfig"
+            } catch {
+                Write-Log "Warning: Symbolic link created but verification failed: $($_.Exception.Message)" "Warning" "FlowLauncherConfig"
+            }
+            
+            return $true
+        } else {
+            Write-Log "Failed to create symbolic link" "Error" "FlowLauncherConfig"
+            return $false
+        }
+        
+    } catch {
+        Write-Log "Failed to configure FlowLauncher settings: $($_.Exception.Message)" "Error" "FlowLauncherConfig"
+        return $false
+    }
+}
+#endregion
+
 #region ProtonVPN Installation
 function Install-ProtonVPN {
     Write-Log "Starting ProtonVPN installation..." "Info" "ProtonVPN"
@@ -1087,7 +1168,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 16
+    $totalSteps = 17
     
     # Step 1: Install Scoop
     Write-Log ("Step 1/{0}: Installing Scoop..." -f $totalSteps) "Info" "Main"
@@ -1181,8 +1262,17 @@ function Main {
         Write-Log "✗ Flowlauncher installation failed" "Error" "Main"
     }
     
-    # Step 11: Install ProtonVPN
-    Write-Log ("Step 11/{0}: Installing ProtonVPN..." -f $totalSteps) "Info" "Main"
+    # Step 11: Configure FlowLauncher Settings
+    Write-Log ("Step 11/{0}: Configuring FlowLauncher settings..." -f $totalSteps) "Info" "Main"
+    if (Configure-FlowLauncherSettings) {
+        $successCount++
+        Write-Log "✓ FlowLauncher settings configuration completed" "Info" "Main"
+    } else {
+        Write-Log "✗ FlowLauncher settings configuration failed" "Error" "Main"
+    }
+    
+    # Step 12: Install ProtonVPN
+    Write-Log ("Step 12/{0}: Installing ProtonVPN..." -f $totalSteps) "Info" "Main"
     if (Install-ProtonVPN) {
         $successCount++
         Write-Log "✓ ProtonVPN installation completed" "Info" "Main"
@@ -1190,8 +1280,8 @@ function Main {
         Write-Log "✗ ProtonVPN installation failed" "Error" "Main"
     }
     
-    # Step 12: Install Google QuickShare
-    Write-Log ("Step 12/{0}: Installing Google QuickShare..." -f $totalSteps) "Info" "Main"
+    # Step 13: Install Google QuickShare
+    Write-Log ("Step 13/{0}: Installing Google QuickShare..." -f $totalSteps) "Info" "Main"
     if (Install-GoogleQuickShare) {
         $successCount++
         Write-Log "✓ Google QuickShare installation completed" "Info" "Main"
@@ -1199,8 +1289,8 @@ function Main {
         Write-Log "✗ Google QuickShare installation failed" "Error" "Main"
     }
     
-    # Step 13: Install Syncthing
-    Write-Log ("Step 13/{0}: Installing Syncthing..." -f $totalSteps) "Info" "Main"
+    # Step 14: Install Syncthing
+    Write-Log ("Step 14/{0}: Installing Syncthing..." -f $totalSteps) "Info" "Main"
     if (Install-Syncthing) {
         $successCount++
         Write-Log "✓ Syncthing installation completed" "Info" "Main"
@@ -1208,8 +1298,8 @@ function Main {
         Write-Log "✗ Syncthing installation failed" "Error" "Main"
     }
     
-    # Step 14: Install VLC
-    Write-Log ("Step 14/{0}: Installing VLC..." -f $totalSteps) "Info" "Main"
+    # Step 15: Install VLC
+    Write-Log ("Step 15/{0}: Installing VLC..." -f $totalSteps) "Info" "Main"
     if (Install-VLC) {
         $successCount++
         Write-Log "✓ VLC installation completed" "Info" "Main"
@@ -1217,8 +1307,8 @@ function Main {
         Write-Log "✗ VLC installation failed" "Error" "Main"
     }
     
-    # Step 15: Install Zalo
-    Write-Log ("Step 15/{0}: Installing Zalo..." -f $totalSteps) "Info" "Main"
+    # Step 16: Install Zalo
+    Write-Log ("Step 16/{0}: Installing Zalo..." -f $totalSteps) "Info" "Main"
     if (Install-Zalo) {
         $successCount++
         Write-Log "✓ Zalo installation completed" "Info" "Main"
@@ -1226,8 +1316,8 @@ function Main {
         Write-Log "✗ Zalo installation failed" "Error" "Main"
     }
     
-    # Step 16: Show Microsoft Office Installation Information
-    Write-Log ("Step 16/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
+    # Step 17: Show Microsoft Office Installation Information
+    Write-Log ("Step 17/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
     if (Show-MicrosoftOfficeInfo) {
         $successCount++
         Write-Log "✓ Microsoft Office information provided" "Info" "Main"
@@ -1252,14 +1342,15 @@ function Main {
         Write-Log "8. Run 'obsidian' to launch Obsidian" "Info" "Main"
         Write-Log "9. Run 'powertoys' to launch PowerToys" "Info" "Main"
         Write-Log "10. Press 'Alt+Space' to launch Flowlauncher" "Info" "Main"
-        Write-Log "11. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
-        Write-Log "12. Look for QuickShare in your system tray or Start menu" "Info" "Main"
-        Write-Log "13. Run 'syncthing' to launch Syncthing" "Info" "Main"
-        Write-Log "14. Run 'vlc' to launch VLC Media Player" "Info" "Main"
-        Write-Log "15. Look for Zalo in your Start menu or desktop" "Info" "Main"
-        Write-Log "16. Install Microsoft Office manually using the guide above" "Info" "Main"
-        Write-Log "17. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "18. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "11. FlowLauncher settings are now synchronized with your dotfiles repository" "Info" "Main"
+        Write-Log "12. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
+        Write-Log "13. Look for QuickShare in your system tray or Start menu" "Info" "Main"
+        Write-Log "14. Run 'syncthing' to launch Syncthing" "Info" "Main"
+        Write-Log "15. Run 'vlc' to launch VLC Media Player" "Info" "Main"
+        Write-Log "16. Look for Zalo in your Start menu or desktop" "Info" "Main"
+        Write-Log "17. Install Microsoft Office manually using the guide above" "Info" "Main"
+        Write-Log "18. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "19. Visit https://scoop.sh/ for more information" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
