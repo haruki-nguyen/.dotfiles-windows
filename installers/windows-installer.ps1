@@ -140,6 +140,222 @@ function Add-ScoopExtrasBucket {
 }
 #endregion
 
+#region winget Installation and Setup
+function Install-Winget {
+    Write-Log "Starting winget (Windows Package Manager) installation..." "Info" "Winget"
+    
+    try {
+        # Check if winget is already installed and accessible
+        if (Test-Command "winget") {
+            Write-Log "winget is already installed and accessible. Checking version..." "Info" "Winget"
+            try {
+                $wingetVersion = winget --version 2>$null
+                Write-Log "winget version: $wingetVersion" "Debug" "Winget"
+            } catch {
+                Write-Log "Could not determine winget version" "Debug" "Winget"
+            }
+            return $true
+        }
+        
+        # Check if winget is available in the system but not in PATH
+        $wingetPaths = @(
+            "${env:LOCALAPPDATA}\Microsoft\WinGet\winget.exe",
+            "${env:ProgramFiles}\WindowsApps\Microsoft.DesktopAppInstaller_*\winget.exe",
+            "${env:ProgramFiles(x86)}\WindowsApps\Microsoft.DesktopAppInstaller_*\winget.exe"
+        )
+        
+        # Also check for wildcard patterns in WindowsApps
+        $windowsAppsPaths = @(
+            "${env:ProgramFiles}\WindowsApps\Microsoft.DesktopAppInstaller_*",
+            "${env:ProgramFiles(x86)}\WindowsApps\Microsoft.DesktopAppInstaller_*"
+        )
+        
+        foreach ($basePath in $windowsAppsPaths) {
+            try {
+                $desktopAppInstallerDirs = Get-ChildItem -Path $basePath -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+                foreach ($dir in $desktopAppInstallerDirs) {
+                    $wingetPath = Join-Path $dir.FullName "winget.exe"
+                    if (Test-Path $wingetPath) {
+                        Write-Log "Found winget at: $wingetPath" "Debug" "Winget"
+                        # Add to PATH temporarily for this session
+                        $env:PATH += ";$(Split-Path $wingetPath -Parent)"
+                        if (Test-Command "winget") {
+                            Write-Log "winget is available but not in PATH. Added to PATH for this session." "Info" "Winget"
+                            try {
+                                $wingetVersion = winget --version 2>$null
+                                Write-Log "winget version: $wingetVersion" "Debug" "Winget"
+                            } catch {
+                                Write-Log "Could not determine winget version" "Debug" "Winget"
+                            }
+                            return $true
+                        }
+                    }
+                }
+            } catch {
+                # Continue with other checks
+            }
+        }
+        
+        # Check specific paths
+        foreach ($path in $wingetPaths) {
+            if (Test-Path $path) {
+                Write-Log "Found winget at: $path" "Debug" "Winget"
+                # Add to PATH temporarily for this session
+                $env:PATH += ";$(Split-Path $path -Parent)"
+                if (Test-Command "winget") {
+                    Write-Log "winget is available but not in PATH. Added to PATH for this session." "Info" "Winget"
+                    try {
+                        $wingetVersion = winget --version 2>$null
+                        Write-Log "winget version: $wingetVersion" "Debug" "Winget"
+                    } catch {
+                        Write-Log "Could not determine winget version" "Debug" "Winget"
+                    }
+                    return $true
+                }
+            }
+        }
+        
+        # Check if Windows App Installer is installed via Get-AppxPackage
+        try {
+            $appInstaller = Get-AppxPackage -Name "Microsoft.DesktopAppInstaller" -AllUsers -ErrorAction SilentlyContinue
+            if ($appInstaller) {
+                Write-Log "Windows App Installer is installed but winget may not be in PATH" "Info" "Winget"
+                
+                # Try to find the winget executable in the package
+                $packagePath = $appInstaller.InstallLocation
+                if ($packagePath) {
+                    $wingetPath = Join-Path $packagePath "winget.exe"
+                    if (Test-Path $wingetPath) {
+                        Write-Log "Found winget in App Installer package at: $wingetPath" "Debug" "Winget"
+                        $env:PATH += ";$packagePath"
+                        if (Test-Command "winget") {
+                            Write-Log "winget is available from App Installer package. Added to PATH for this session." "Info" "Winget"
+                            try {
+                                $wingetVersion = winget --version 2>$null
+                                Write-Log "winget version: $wingetVersion" "Debug" "Winget"
+                            } catch {
+                                Write-Log "Could not determine winget version" "Debug" "Winget"
+                            }
+                            return $true
+                        }
+                    }
+                }
+            }
+        } catch {
+            # Continue with other checks
+        }
+        
+        # Check if winget is available in system PATH but not working
+        try {
+            $wingetInPath = Get-Command "winget" -ErrorAction SilentlyContinue
+            if ($wingetInPath) {
+                Write-Log "winget found in PATH at: $($wingetInPath.Source)" "Debug" "Winget"
+                # Try to run it to see if it works
+                $testResult = winget --version 2>&1
+                if ($LASTEXITCODE -eq 0) {
+                    Write-Log "winget is working from PATH. Version: $testResult" "Info" "Winget"
+                    return $true
+                } else {
+                    Write-Log "winget found in PATH but not working properly" "Debug" "Winget"
+                }
+            }
+        } catch {
+            # Continue with installation
+        }
+        
+        # If we get here, winget is not installed or not accessible
+        Write-Log "winget not found or not accessible. Attempting to install Windows App Installer..." "Info" "Winget"
+        
+        # Try to install via Microsoft Store using PowerShell
+        try {
+            Write-Log "Attempting to install Windows App Installer via Microsoft Store..." "Info" "Winget"
+            
+            # Use Add-AppxPackage to install from Microsoft Store
+            $storeUrl = "ms-windows-store://pdp/?ProductId=9NBLGGH4NNS1"
+            Start-Process $storeUrl
+            
+            Write-Log "Microsoft Store opened for Windows App Installer installation." "Info" "Winget"
+            Write-Log "Please complete the installation manually in the Microsoft Store." "Info" "Winget"
+            Write-Log "After installation, restart this script to continue." "Info" "Winget"
+            
+            # Wait a bit and check if installation completed
+            Start-Sleep -Seconds 10
+            
+            # Check if winget is now available
+            if (Test-Command "winget") {
+                Write-Log "winget installation completed successfully!" "Info" "Winget"
+                return $true
+            } else {
+                Write-Log "winget installation may still be in progress. Please wait and restart the script." "Warning" "Winget"
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to open Microsoft Store for winget installation: $($_.Exception.Message)" "Error" "Winget"
+        }
+        
+        # Alternative: Try to download and install manually
+        Write-Log "Attempting manual winget installation..." "Info" "Winget"
+        
+        try {
+            # Download the latest winget release
+            $tempDir = [System.IO.Path]::GetTempPath()
+            $wingetDir = Join-Path $tempDir "winget-install"
+            
+            if (-not (Test-Path $wingetDir)) {
+                New-Item -ItemType Directory -Path $wingetDir -Force | Out-Null
+            }
+            
+            # Get the latest release info from GitHub
+            $releaseUrl = "https://api.github.com/repos/microsoft/winget-cli/releases/latest"
+            $releaseInfo = Invoke-RestMethod -Uri $releaseUrl -Headers @{
+                "Accept" = "application/vnd.github.v3+json"
+                "User-Agent" = "PowerShell-Winget-Installer"
+            }
+            
+            # Find the MSIX bundle for x64
+            $msixAsset = $releaseInfo.assets | Where-Object { 
+                $_.name -like "*x64.msixbundle" -and $_.name -notlike "*preview*" 
+            } | Select-Object -First 1
+            
+            if (-not $msixAsset) {
+                Write-Log "Could not find winget MSIX bundle in latest release" "Error" "Winget"
+                return $false
+            }
+            
+            $downloadUrl = $msixAsset.browser_download_url
+            $downloadPath = Join-Path $wingetDir $msixAsset.name
+            
+            Write-Log "Downloading winget from: $downloadUrl" "Info" "Winget"
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $downloadPath
+            
+            # Install the MSIX bundle
+            Write-Log "Installing winget MSIX bundle..." "Info" "Winget"
+            Add-AppxPackage -Path $downloadPath -ErrorAction Stop
+            
+            # Clean up
+            Remove-Item $wingetDir -Recurse -Force -ErrorAction SilentlyContinue
+            
+            # Check if installation was successful
+            if (Test-Command "winget") {
+                Write-Log "winget installed successfully via manual installation!" "Info" "Winget"
+                return $true
+            } else {
+                Write-Log "winget installation failed - command not found after installation" "Error" "Winget"
+                return $false
+            }
+            
+        } catch {
+            Write-Log "Failed to install winget manually: $($_.Exception.Message)" "Error" "Winget"
+            return $false
+        }
+        
+    } catch {
+        Write-Log "Failed to install winget: $($_.Exception.Message)" "Error" "Winget"
+        return $false
+    }
+}
+#endregion
+
 #region Git Installation
 function Install-Git {
     Write-Log "Starting Git installation..." "Info" "Git"
@@ -862,35 +1078,206 @@ function Install-GoogleQuickShare {
     try {
         # Check if QuickShare is already installed
         $quickShareInstalled = $false
+        $detectionMethod = ""
+        
+        Write-Log "Checking for existing Google QuickShare installation..." "Debug" "QuickShare"
         
         # Check if QuickShare is installed via Scoop
         try {
             $scoopList = scoop list 2>$null
             if ($scoopList -match "quickshare") {
                 $quickShareInstalled = $true
+                $detectionMethod = "Scoop"
                 Write-Log "Google QuickShare is already installed via Scoop. Skipping installation." "Info" "QuickShare"
             }
         } catch {
-            # If scoop list fails, continue with other checks
+            Write-Log "Scoop list check failed, continuing with other checks..." "Debug" "QuickShare"
         }
         
         # Check if QuickShare is installed in Program Files
-        $quickSharePath = "${env:ProgramFiles}\Google\QuickShare\QuickShare.exe"
-        if (Test-Path $quickSharePath) {
-            $quickShareInstalled = $true
-            Write-Log "Google QuickShare is already installed in Program Files. Skipping installation." "Info" "QuickShare"
+        if (-not $quickShareInstalled) {
+            $quickSharePath = "${env:ProgramFiles}\Google\QuickShare\QuickShare.exe"
+            Write-Log "Checking Program Files path: $quickSharePath" "Debug" "QuickShare"
+            if (Test-Path $quickSharePath) {
+                $quickShareInstalled = $true
+                $detectionMethod = "Program Files"
+                Write-Log "Google QuickShare is already installed in Program Files. Skipping installation." "Info" "QuickShare"
+            }
         }
         
         # Check if QuickShare is installed in Program Files (x86)
-        $quickSharePathX86 = "${env:ProgramFiles(x86)}\Google\QuickShare\QuickShare.exe"
-        if (Test-Path $quickSharePathX86) {
-            $quickShareInstalled = $true
-            Write-Log "Google QuickShare is already installed in Program Files (x86). Skipping installation." "Info" "QuickShare"
+        if (-not $quickShareInstalled) {
+            $quickSharePathX86 = "${env:ProgramFiles(x86)}\Google\QuickShare\QuickShare.exe"
+            Write-Log "Checking Program Files (x86) path: $quickSharePathX86" "Debug" "QuickShare"
+            if (Test-Path $quickSharePathX86) {
+                $quickShareInstalled = $true
+                $detectionMethod = "Program Files (x86)"
+                Write-Log "Google QuickShare is already installed in Program Files (x86). Skipping installation." "Info" "QuickShare"
+            }
+        }
+        
+        # Check if QuickShare is installed in AppData
+        if (-not $quickShareInstalled) {
+            $quickShareAppDataPath = "${env:LOCALAPPDATA}\Google\QuickShare\QuickShare.exe"
+            Write-Log "Checking AppData path: $quickShareAppDataPath" "Debug" "QuickShare"
+            if (Test-Path $quickShareAppDataPath) {
+                $quickShareInstalled = $true
+                $detectionMethod = "AppData"
+                Write-Log "Google QuickShare is already installed in AppData. Skipping installation." "Info" "QuickShare"
+            }
+        }
+        
+        # Check if QuickShare is installed via winget
+        if (-not $quickShareInstalled) {
+            try {
+                Write-Log "Checking winget for Google.QuickShare..." "Debug" "QuickShare"
+                $wingetList = winget list "Google.QuickShare" 2>$null
+                if ($wingetList -match "Google.QuickShare") {
+                    $quickShareInstalled = $true
+                    $detectionMethod = "winget"
+                    Write-Log "Google QuickShare is already installed via winget. Skipping installation." "Info" "QuickShare"
+                }
+            } catch {
+                Write-Log "winget check failed, continuing with other checks..." "Debug" "QuickShare"
+            }
+        }
+        
+        # Check Windows Registry for QuickShare installation
+        if (-not $quickShareInstalled) {
+            try {
+                Write-Log "Checking Windows Registry for QuickShare..." "Debug" "QuickShare"
+                $registryPaths = @(
+                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                )
+                
+                foreach ($regPath in $registryPaths) {
+                    $installedApps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue | Where-Object {
+                        $_.DisplayName -like "*QuickShare*" -or $_.DisplayName -like "*Nearby Share*" -or $_.DisplayName -like "*Better Together*"
+                    }
+                    
+                    if ($installedApps) {
+                        $quickShareInstalled = $true
+                        $detectionMethod = "Registry"
+                        Write-Log "Google QuickShare is already installed (found in registry). Skipping installation." "Info" "QuickShare"
+                        break
+                    }
+                }
+            } catch {
+                Write-Log "Registry check failed, continuing with other checks..." "Debug" "QuickShare"
+            }
+        }
+        
+        # Check if QuickShare process is running (indicates it's installed)
+        if (-not $quickShareInstalled) {
+            try {
+                Write-Log "Checking for running QuickShare processes..." "Debug" "QuickShare"
+                $quickShareProcess = Get-Process -Name "QuickShare" -ErrorAction SilentlyContinue
+                if ($quickShareProcess) {
+                    $quickShareInstalled = $true
+                    $detectionMethod = "Running Process"
+                    Write-Log "Google QuickShare is already installed and running. Skipping installation." "Info" "QuickShare"
+                }
+            } catch {
+                Write-Log "Process check failed, continuing with other checks..." "Debug" "QuickShare"
+            }
+        }
+        
+        # Check for QuickShare in Start Menu
+        if (-not $quickShareInstalled) {
+            Write-Log "Checking Start Menu for QuickShare shortcuts..." "Debug" "QuickShare"
+            $startMenuPaths = @(
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\Google QuickShare.lnk",
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\QuickShare.lnk",
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\Nearby Share.lnk"
+            )
+            
+            foreach ($startMenuPath in $startMenuPaths) {
+                Write-Log "Checking Start Menu path: $startMenuPath" "Debug" "QuickShare"
+                if (Test-Path $startMenuPath) {
+                    $quickShareInstalled = $true
+                    $detectionMethod = "Start Menu"
+                    Write-Log "Google QuickShare is already installed (found in Start Menu). Skipping installation." "Info" "QuickShare"
+                    break
+                }
+            }
+        }
+        
+        # Check for QuickShare in Desktop shortcuts
+        if (-not $quickShareInstalled) {
+            Write-Log "Checking Desktop for QuickShare shortcuts..." "Debug" "QuickShare"
+            $desktopPaths = @(
+                "${env:USERPROFILE}\Desktop\Google QuickShare.lnk",
+                "${env:USERPROFILE}\Desktop\QuickShare.lnk",
+                "${env:USERPROFILE}\Desktop\Nearby Share.lnk"
+            )
+            
+            foreach ($desktopPath in $desktopPaths) {
+                Write-Log "Checking Desktop path: $desktopPath" "Debug" "QuickShare"
+                if (Test-Path $desktopPath) {
+                    $quickShareInstalled = $true
+                    $detectionMethod = "Desktop"
+                    Write-Log "Google QuickShare is already installed (found on Desktop). Skipping installation." "Info" "QuickShare"
+                    break
+                }
+            }
+        }
+        
+        # Check for QuickShare in All Users Start Menu
+        if (-not $quickShareInstalled) {
+            Write-Log "Checking All Users Start Menu for QuickShare..." "Debug" "QuickShare"
+            $allUsersStartMenuPaths = @(
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\Google QuickShare.lnk",
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\QuickShare.lnk",
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\Nearby Share.lnk"
+            )
+            
+            foreach ($startMenuPath in $allUsersStartMenuPaths) {
+                Write-Log "Checking All Users Start Menu path: $startMenuPath" "Debug" "QuickShare"
+                if (Test-Path $startMenuPath) {
+                    $quickShareInstalled = $true
+                    $detectionMethod = "All Users Start Menu"
+                    Write-Log "Google QuickShare is already installed (found in All Users Start Menu). Skipping installation." "Info" "QuickShare"
+                    break
+                }
+            }
+        }
+        
+        # Check for QuickShare in WindowsApps (Microsoft Store app)
+        if (-not $quickShareInstalled) {
+            Write-Log "Checking WindowsApps for QuickShare..." "Debug" "QuickShare"
+            $windowsAppsPaths = @(
+                "${env:ProgramFiles}\WindowsApps\Google.QuickShare*",
+                "${env:ProgramFiles(x86)}\WindowsApps\Google.QuickShare*"
+            )
+            
+            foreach ($basePath in $windowsAppsPaths) {
+                try {
+                    $quickShareDirs = Get-ChildItem -Path $basePath -Directory -ErrorAction SilentlyContinue
+                    foreach ($dir in $quickShareDirs) {
+                        $quickShareExe = Join-Path $dir.FullName "QuickShare.exe"
+                        Write-Log "Checking WindowsApps path: $quickShareExe" "Debug" "QuickShare"
+                        if (Test-Path $quickShareExe) {
+                            $quickShareInstalled = $true
+                            $detectionMethod = "WindowsApps"
+                            Write-Log "Google QuickShare is already installed (found in WindowsApps). Skipping installation." "Info" "QuickShare"
+                            break
+                        }
+                    }
+                    if ($quickShareInstalled) { break }
+                } catch {
+                    Write-Log "WindowsApps check failed for path: $basePath" "Debug" "QuickShare"
+                }
+            }
         }
         
         if ($quickShareInstalled) {
+            Write-Log "Google QuickShare installation check completed - already installed (detected via: $detectionMethod)." "Info" "QuickShare"
             return $true
         }
+        
+        Write-Log "Google QuickShare not found in any expected location. Proceeding with installation..." "Info" "QuickShare"
         
         # Download and install QuickShare
         Write-Log "Downloading Google QuickShare installer..." "Info" "QuickShare"
@@ -1161,6 +1548,316 @@ function Install-Zalo {
 }
 #endregion
 
+#region PC Manager Installation
+function Install-PCManager {
+    Write-Log "Starting PC Manager installation..." "Info" "PCManager"
+    
+    try {
+        # Check if PC Manager is already installed
+        $pcManagerInstalled = $false
+        $detectionMethod = ""
+        
+        Write-Log "Checking for existing PC Manager installation..." "Debug" "PCManager"
+        
+        # Check if PC Manager is installed via winget (msstore)
+        Write-Log "Checking winget for PC Manager (msstore ID 9PM860492SZD)..." "Debug" "PCManager"
+        $wingetList = winget list "9PM860492SZD" 2>$null
+        if ($wingetList -match "PC Manager" -or $wingetList -match "9PM860492SZD") {
+            $pcManagerInstalled = $true
+            $detectionMethod = "winget (msstore)"
+            Write-Log "PC Manager is already installed via winget (msstore). Skipping installation." "Info" "PCManager"
+        }
+        
+        # Check if PC Manager is installed in WindowsApps (Microsoft Store app)
+        if (-not $pcManagerInstalled) {
+            Write-Log "Checking WindowsApps for PC Manager..." "Debug" "PCManager"
+            $windowsAppsPaths = @(
+                "${env:ProgramFiles}\WindowsApps\Microsoft.PCManager*",
+                "${env:ProgramFiles(x86)}\WindowsApps\Microsoft.PCManager*"
+            )
+            
+            foreach ($basePath in $windowsAppsPaths) {
+                try {
+                    $pcManagerDirs = Get-ChildItem -Path $basePath -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+                    foreach ($dir in $pcManagerDirs) {
+                        $pcManagerExe = Join-Path $dir.FullName "PCManager.exe"
+                        Write-Log "Checking WindowsApps path: $pcManagerExe" "Debug" "PCManager"
+                        if (Test-Path $pcManagerExe) {
+                            $pcManagerInstalled = $true
+                            $detectionMethod = "WindowsApps"
+                            Write-Log "PC Manager is already installed (found in WindowsApps). Skipping installation." "Info" "PCManager"
+                            break
+                        }
+                    }
+                    if ($pcManagerInstalled) { break }
+                } catch {
+                    Write-Log "WindowsApps check failed for path: $basePath" "Debug" "PCManager"
+                }
+            }
+        }
+        
+        # Check if PC Manager is installed via Get-AppxPackage
+        if (-not $pcManagerInstalled) {
+            try {
+                Write-Log "Checking AppxPackage for PC Manager..." "Debug" "PCManager"
+                $appxPackage = Get-AppxPackage -Name "Microsoft.PCManager" -AllUsers -ErrorAction SilentlyContinue
+                if ($appxPackage) {
+                    $pcManagerInstalled = $true
+                    $detectionMethod = "AppxPackage"
+                    Write-Log "PC Manager is already installed (found via AppxPackage). Skipping installation." "Info" "PCManager"
+                }
+            } catch {
+                Write-Log "AppxPackage check failed, continuing with other checks..." "Debug" "PCManager"
+            }
+        }
+        
+        # Check Windows Registry for PC Manager installation
+        if (-not $pcManagerInstalled) {
+            try {
+                Write-Log "Checking Windows Registry for PC Manager..." "Debug" "PCManager"
+                $registryPaths = @(
+                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                )
+                
+                foreach ($regPath in $registryPaths) {
+                    $installedApps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue | Where-Object {
+                        $_.DisplayName -like "*PC Manager*" -or $_.DisplayName -like "*Microsoft PC Manager*"
+                    }
+                    
+                    if ($installedApps) {
+                        $pcManagerInstalled = $true
+                        $detectionMethod = "Registry"
+                        Write-Log "PC Manager is already installed (found in registry). Skipping installation." "Info" "PCManager"
+                        break
+                    }
+                }
+            } catch {
+                Write-Log "Registry check failed, continuing with other checks..." "Debug" "PCManager"
+            }
+        }
+        
+        # Check for PC Manager in Start Menu
+        if (-not $pcManagerInstalled) {
+            Write-Log "Checking Start Menu for PC Manager..." "Debug" "PCManager"
+            $startMenuPaths = @(
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\PC Manager.lnk",
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\Microsoft PC Manager.lnk"
+            )
+            
+            foreach ($startMenuPath in $startMenuPaths) {
+                Write-Log "Checking Start Menu path: $startMenuPath" "Debug" "PCManager"
+                if (Test-Path $startMenuPath) {
+                    $pcManagerInstalled = $true
+                    $detectionMethod = "Start Menu"
+                    Write-Log "PC Manager is already installed (found in Start Menu). Skipping installation." "Info" "PCManager"
+                    break
+                }
+            }
+        }
+        
+        # Check for PC Manager in All Users Start Menu
+        if (-not $pcManagerInstalled) {
+            Write-Log "Checking All Users Start Menu for PC Manager..." "Debug" "PCManager"
+            $allUsersStartMenuPaths = @(
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\PC Manager.lnk",
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\Microsoft PC Manager.lnk"
+            )
+            
+            foreach ($startMenuPath in $allUsersStartMenuPaths) {
+                Write-Log "Checking All Users Start Menu path: $startMenuPath" "Debug" "PCManager"
+                if (Test-Path $startMenuPath) {
+                    $pcManagerInstalled = $true
+                    $detectionMethod = "All Users Start Menu"
+                    Write-Log "PC Manager is already installed (found in All Users Start Menu). Skipping installation." "Info" "PCManager"
+                    break
+                }
+            }
+        }
+        
+        if ($pcManagerInstalled) {
+            Write-Log "PC Manager installation check completed - already installed (detected via: $detectionMethod)." "Info" "PCManager"
+            return $true
+        }
+        
+        Write-Log "PC Manager not found in any expected location. Proceeding with installation..." "Info" "PCManager"
+        
+        # Install PC Manager using winget (msstore)
+        Write-Log "Installing PC Manager using winget (msstore)..." "Info" "PCManager"
+        Write-Log "Note: This may take a few minutes and require user interaction..." "Info" "PCManager"
+
+        try {
+            Write-Log "Using winget command: winget install --id=9PM860492SZD --source=msstore" "Debug" "PCManager"
+            $process = Start-Process -FilePath "winget" -ArgumentList 'install --id=9PM860492SZD --source=msstore --accept-source-agreements --accept-package-agreements --verbose-logs' -Wait -PassThru -NoNewWindow
+            $exitCode = $process.ExitCode
+            Write-Log "winget install process exited with code: $exitCode" "Debug" "PCManager"
+
+            if ($exitCode -eq 0) {
+                Write-Log "PC Manager install command completed successfully (exit code 0)." "Info" "PCManager"
+                # Wait a few seconds for registration
+                Start-Sleep -Seconds 5
+                # Fallback: check with Get-AppxPackage
+                $appxPackage = Get-AppxPackage -Name "9PM860492SZD" -AllUsers -ErrorAction SilentlyContinue
+                if ($appxPackage) {
+                    Write-Log "PC Manager detected via Get-AppxPackage after install." "Info" "PCManager"
+                    return $true
+                } else {
+                    Write-Log "PC Manager not detected via Get-AppxPackage, but install command succeeded. Please verify manually." "Warning" "PCManager"
+                    return $true
+                }
+            } else {
+                Write-Log "PC Manager install command failed with exit code $exitCode." "Error" "PCManager"
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to install PC Manager via winget (msstore): $($_.Exception.Message)" "Error" "PCManager"
+            return $false
+        }
+        
+    } catch {
+        Write-Log "Failed to install PC Manager: $($_.Exception.Message)" "Error" "PCManager"
+        return $false
+    }
+}
+#endregion
+
+#region PC Manager Alternative Installation Information
+function Show-PCManagerAlternativeInfo {
+    Write-Log "=== PC Manager Alternative Installation Methods ===" "Info" "PCManager"
+    Write-Log "If PC Manager installation via winget (msstore) fails, try these alternatives:" "Info" "PCManager"
+    Write-Log " " "Info" "PCManager"
+    Write-Log "🔧 Alternative Installation Methods:" "Info" "PCManager"
+    Write-Log "1. Microsoft Store (Recommended):" "Info" "PCManager"
+    Write-Log "   - Open Microsoft Store" "Info" "PCManager"
+    Write-Log "   - Search for 'PC Manager' or use the code 9PM860492SZD" "Info" "PCManager"
+    Write-Log "   - Click 'Get' or 'Install'" "Info" "PCManager"
+    Write-Log "   - Direct link: https://www.microsoft.com/store/apps/9PM860492SZD" "Info" "PCManager"
+    Write-Log " " "Info" "PCManager"
+    Write-Log "2. Using winget manually:" "Info" "PCManager"
+    Write-Log "   winget install --id=9PM860492SZD --source=msstore" "Info" "PCManager"
+    Write-Log " " "Info" "PCManager"
+    Write-Log "3. Direct download (if available):" "Info" "PCManager"
+    Write-Log "   Visit: https://www.microsoft.com/store/apps/9PM860492SZD" "Info" "PCManager"
+    Write-Log "   Click 'Get' to open Microsoft Store" "Info" "PCManager"
+    Write-Log " " "Info" "PCManager"
+    Write-Log "💡 Note: PC Manager is a Microsoft Store app and requires a Microsoft account." "Info" "PCManager"
+    Write-Log "The app provides system optimization, cleanup, and performance monitoring features." "Info" "PCManager"
+    Write-Log "=== End of PC Manager Alternative Installation Methods ===" "Info" "PCManager"
+    return $true
+}
+#endregion
+
+#region winget Alternative Installation Information
+function Show-WingetAlternativeInfo {
+    Write-Log "=== winget Alternative Installation Methods ===" "Info" "Winget"
+    Write-Log "If winget installation fails, try these alternatives:" "Info" "Winget"
+    Write-Log " " "Info" "Winget"
+    Write-Log "🔧 Alternative Installation Methods:" "Info" "Winget"
+    Write-Log "1. Microsoft Store (Recommended):" "Info" "Winget"
+    Write-Log "   - Open Microsoft Store" "Info" "Winget"
+    Write-Log "   - Search for 'App Installer'" "Info" "Winget"
+    Write-Log "   - Click 'Get' or 'Install'" "Info" "Winget"
+    Write-Log "   - Direct link: https://www.microsoft.com/store/apps/9NBLGGH4NNS1" "Info" "Winget"
+    Write-Log " " "Info" "Winget"
+    Write-Log "2. Manual download from GitHub:" "Info" "Winget"
+    Write-Log "   - Visit: https://github.com/microsoft/winget-cli/releases" "Info" "Winget"
+    Write-Log "   - Download the latest x64.msixbundle" "Info" "Winget"
+    Write-Log "   - Double-click to install" "Info" "Winget"
+    Write-Log " " "Info" "Winget"
+    Write-Log "3. Using PowerShell (if available):" "Info" "Winget"
+    Write-Log "   Add-AppxPackage -Path 'path-to-winget.msixbundle'" "Info" "Winget"
+    Write-Log " " "Info" "Winget"
+    Write-Log "💡 Note: winget requires Windows 10 version 1709 or later." "Info" "Winget"
+    Write-Log "After installation, restart your terminal/PowerShell to use winget commands." "Info" "Winget"
+    Write-Log "=== End of winget Alternative Installation Methods ===" "Info" "Winget"
+    
+    return $true
+}
+#endregion
+
+#region Pure Battery Add-on Installation
+function Install-PureBatteryAddon {
+    Write-Log "Starting Pure Battery Add-on installation..." "Info" "PureBatteryAddon"
+    try {
+        # Check if Pure Battery Add-on is already installed via winget (msstore)
+        Write-Log "Checking winget for Pure Battery Add-on (msstore ID 9N3HDTNCF6Z8)..." "Debug" "PureBatteryAddon"
+        $wingetList = winget list "9N3HDTNCF6Z8" 2>$null
+        if ($wingetList -match "Pure Battery" -or $wingetList -match "9N3HDTNCF6Z8") {
+            Write-Log "Pure Battery Add-on is already installed via winget (msstore). Skipping installation." "Info" "PureBatteryAddon"
+            return $true
+        }
+        # Install Pure Battery Add-on using winget (msstore)
+        Write-Log "Installing Pure Battery Add-on using winget (msstore)..." "Info" "PureBatteryAddon"
+        Write-Log "Using winget command: winget install --id=9N3HDTNCF6Z8 --source=msstore" "Debug" "PureBatteryAddon"
+        $process = Start-Process -FilePath "winget" -ArgumentList 'install --id=9N3HDTNCF6Z8 --source=msstore --accept-source-agreements --accept-package-agreements --verbose-logs' -Wait -PassThru -NoNewWindow
+        $exitCode = $process.ExitCode
+        Write-Log "winget install process exited with code: $exitCode" "Debug" "PureBatteryAddon"
+        if ($exitCode -eq 0) {
+            Write-Log "Pure Battery Add-on install command completed successfully (exit code 0)." "Info" "PureBatteryAddon"
+            # Wait a few seconds for registration
+            Start-Sleep -Seconds 5
+            # Fallback: check with Get-AppxPackage
+            $appxPackage = Get-AppxPackage -Name "9N3HDTNCF6Z8" -AllUsers -ErrorAction SilentlyContinue
+            if ($appxPackage) {
+                Write-Log "Pure Battery Add-on detected via Get-AppxPackage after install." "Info" "PureBatteryAddon"
+                return $true
+            } else {
+                Write-Log "Pure Battery Add-on not detected via Get-AppxPackage, but install command succeeded. Please verify manually." "Warning" "PureBatteryAddon"
+                return $true
+            }
+        } else {
+            Write-Log "Pure Battery Add-on install command failed with exit code $exitCode." "Error" "PureBatteryAddon"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Pure Battery Add-on: $($_.Exception.Message)" "Error" "PureBatteryAddon"
+        return $false
+    }
+}
+#endregion
+
+#region Windows Terminal Installation
+function Install-WindowsTerminal {
+    Write-Log "Starting Windows Terminal installation..." "Info" "WindowsTerminal"
+    try {
+        # Check if Windows Terminal is already installed via winget
+        Write-Log "Checking winget for Windows Terminal (ID Microsoft.WindowsTerminal)..." "Debug" "WindowsTerminal"
+        $wingetList = winget list "Microsoft.WindowsTerminal" 2>$null
+        if ($wingetList -match "Windows Terminal" -or $wingetList -match "Microsoft.WindowsTerminal") {
+            Write-Log "Windows Terminal is already installed via winget. Skipping installation." "Info" "WindowsTerminal"
+            return $true
+        }
+        # Install Windows Terminal using winget
+        Write-Log "Installing Windows Terminal using winget..." "Info" "WindowsTerminal"
+        Write-Log "Using winget command: winget install --id=Microsoft.WindowsTerminal -e" "Debug" "WindowsTerminal"
+        $process = Start-Process -FilePath "winget" -ArgumentList 'install --id=Microsoft.WindowsTerminal -e --accept-source-agreements --accept-package-agreements --verbose-logs' -Wait -PassThru -NoNewWindow
+        $exitCode = $process.ExitCode
+        Write-Log "winget install process exited with code: $exitCode" "Debug" "WindowsTerminal"
+        if ($exitCode -eq 0) {
+            Write-Log "Windows Terminal install command completed successfully (exit code 0)." "Info" "WindowsTerminal"
+            # Wait a few seconds for registration
+            Start-Sleep -Seconds 5
+            # Fallback: check with Get-AppxPackage
+            $appxPackage = Get-AppxPackage -Name "Microsoft.WindowsTerminal" -AllUsers -ErrorAction SilentlyContinue
+            if ($appxPackage) {
+                Write-Log "Windows Terminal detected via Get-AppxPackage after install." "Info" "WindowsTerminal"
+                return $true
+            } else {
+                Write-Log "Windows Terminal not detected via Get-AppxPackage, but install command succeeded. Please verify manually." "Warning" "WindowsTerminal"
+                return $true
+            }
+        } else {
+            Write-Log "Windows Terminal install command failed with exit code $exitCode." "Error" "WindowsTerminal"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Windows Terminal: $($_.Exception.Message)" "Error" "WindowsTerminal"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -1168,10 +1865,19 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 17
+    $totalSteps = 21
     
-    # Step 1: Install Scoop
-    Write-Log ("Step 1/{0}: Installing Scoop..." -f $totalSteps) "Info" "Main"
+    # Step 1: Install winget
+    Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
+    if (Install-Winget) {
+        $successCount++
+        Write-Log "✓ winget installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ winget installation failed" "Error" "Main"
+    }
+    
+    # Step 2: Install Scoop
+    Write-Log ("Step 2/{0}: Installing Scoop..." -f $totalSteps) "Info" "Main"
     if (Install-Scoop) {
         $successCount++
         Write-Log "✓ Scoop installation completed" "Info" "Main"
@@ -1179,8 +1885,8 @@ function Main {
         Write-Log "✗ Scoop installation failed" "Error" "Main"
     }
     
-    # Step 2: Install Git
-    Write-Log ("Step 2/{0}: Installing Git..." -f $totalSteps) "Info" "Main"
+    # Step 3: Install Git
+    Write-Log ("Step 3/{0}: Installing Git..." -f $totalSteps) "Info" "Main"
     if (Install-Git) {
         $successCount++
         Write-Log "✓ Git installation completed" "Info" "Main"
@@ -1188,8 +1894,8 @@ function Main {
         Write-Log "✗ Git installation failed" "Error" "Main"
     }
     
-    # Step 3: Install VSCode
-    Write-Log ("Step 3/{0}: Installing VSCode..." -f $totalSteps) "Info" "Main"
+    # Step 4: Install VSCode
+    Write-Log ("Step 4/{0}: Installing VSCode..." -f $totalSteps) "Info" "Main"
     if (Install-VSCode) {
         $successCount++
         Write-Log "✓ VSCode installation completed" "Info" "Main"
@@ -1197,8 +1903,8 @@ function Main {
         Write-Log "✗ VSCode installation failed" "Error" "Main"
     }
     
-    # Step 4: Install Cursor AI Editor
-    Write-Log ("Step 4/{0}: Installing Cursor AI Editor..." -f $totalSteps) "Info" "Main"
+    # Step 5: Install Cursor AI Editor
+    Write-Log ("Step 5/{0}: Installing Cursor AI Editor..." -f $totalSteps) "Info" "Main"
     if (Install-Cursor) {
         $successCount++
         Write-Log "✓ Cursor AI Editor installation completed" "Info" "Main"
@@ -1206,8 +1912,8 @@ function Main {
         Write-Log "✗ Cursor AI Editor installation failed" "Error" "Main"
     }
     
-    # Step 5: Install Discord
-    Write-Log ("Step 5/{0}: Installing Discord..." -f $totalSteps) "Info" "Main"
+    # Step 6: Install Discord
+    Write-Log ("Step 6/{0}: Installing Discord..." -f $totalSteps) "Info" "Main"
     if (Install-Discord) {
         $successCount++
         Write-Log "✓ Discord installation completed" "Info" "Main"
@@ -1215,8 +1921,8 @@ function Main {
         Write-Log "✗ Discord installation failed" "Error" "Main"
     }
     
-    # Step 6: Install Google Chrome
-    Write-Log ("Step 6/{0}: Installing Google Chrome..." -f $totalSteps) "Info" "Main"
+    # Step 7: Install Google Chrome
+    Write-Log ("Step 7/{0}: Installing Google Chrome..." -f $totalSteps) "Info" "Main"
     if (Install-GoogleChrome) {
         $successCount++
         Write-Log "✓ Google Chrome installation completed" "Info" "Main"
@@ -1224,8 +1930,8 @@ function Main {
         Write-Log "✗ Google Chrome installation failed" "Error" "Main"
     }
     
-    # Step 7: Install Notion
-    Write-Log ("Step 7/{0}: Installing Notion..." -f $totalSteps) "Info" "Main"
+    # Step 8: Install Notion
+    Write-Log ("Step 8/{0}: Installing Notion..." -f $totalSteps) "Info" "Main"
     if (Install-Notion) {
         $successCount++
         Write-Log "✓ Notion installation completed" "Info" "Main"
@@ -1233,8 +1939,8 @@ function Main {
         Write-Log "✗ Notion installation failed" "Error" "Main"
     }
     
-    # Step 8: Install Obsidian
-    Write-Log ("Step 8/{0}: Installing Obsidian..." -f $totalSteps) "Info" "Main"
+    # Step 9: Install Obsidian
+    Write-Log ("Step 9/{0}: Installing Obsidian..." -f $totalSteps) "Info" "Main"
     if (Install-Obsidian) {
         $successCount++
         Write-Log "✓ Obsidian installation completed" "Info" "Main"
@@ -1242,8 +1948,8 @@ function Main {
         Write-Log "✗ Obsidian installation failed" "Error" "Main"
     }
     
-    # Step 9: Install PowerToys
-    Write-Log ("Step 9/{0}: Installing PowerToys..." -f $totalSteps) "Info" "Main"
+    # Step 10: Install PowerToys
+    Write-Log ("Step 10/{0}: Installing PowerToys..." -f $totalSteps) "Info" "Main"
     if (Install-PowerToys) {
         $successCount++
         Write-Log "✓ PowerToys installation completed" "Info" "Main"
@@ -1253,8 +1959,8 @@ function Main {
         Show-PowerToysAlternativeInfo
     }
     
-    # Step 10: Install Flowlauncher
-    Write-Log ("Step 10/{0}: Installing Flowlauncher..." -f $totalSteps) "Info" "Main"
+    # Step 11: Install Flowlauncher
+    Write-Log ("Step 11/{0}: Installing Flowlauncher..." -f $totalSteps) "Info" "Main"
     if (Install-Flowlauncher) {
         $successCount++
         Write-Log "✓ Flowlauncher installation completed" "Info" "Main"
@@ -1262,8 +1968,8 @@ function Main {
         Write-Log "✗ Flowlauncher installation failed" "Error" "Main"
     }
     
-    # Step 11: Configure FlowLauncher Settings
-    Write-Log ("Step 11/{0}: Configuring FlowLauncher settings..." -f $totalSteps) "Info" "Main"
+    # Step 12: Configure FlowLauncher Settings
+    Write-Log ("Step 12/{0}: Configuring FlowLauncher settings..." -f $totalSteps) "Info" "Main"
     if (Configure-FlowLauncherSettings) {
         $successCount++
         Write-Log "✓ FlowLauncher settings configuration completed" "Info" "Main"
@@ -1271,8 +1977,8 @@ function Main {
         Write-Log "✗ FlowLauncher settings configuration failed" "Error" "Main"
     }
     
-    # Step 12: Install ProtonVPN
-    Write-Log ("Step 12/{0}: Installing ProtonVPN..." -f $totalSteps) "Info" "Main"
+    # Step 13: Install ProtonVPN
+    Write-Log ("Step 13/{0}: Installing ProtonVPN..." -f $totalSteps) "Info" "Main"
     if (Install-ProtonVPN) {
         $successCount++
         Write-Log "✓ ProtonVPN installation completed" "Info" "Main"
@@ -1280,8 +1986,8 @@ function Main {
         Write-Log "✗ ProtonVPN installation failed" "Error" "Main"
     }
     
-    # Step 13: Install Google QuickShare
-    Write-Log ("Step 13/{0}: Installing Google QuickShare..." -f $totalSteps) "Info" "Main"
+    # Step 14: Install Google QuickShare
+    Write-Log ("Step 14/{0}: Installing Google QuickShare..." -f $totalSteps) "Info" "Main"
     if (Install-GoogleQuickShare) {
         $successCount++
         Write-Log "✓ Google QuickShare installation completed" "Info" "Main"
@@ -1289,8 +1995,8 @@ function Main {
         Write-Log "✗ Google QuickShare installation failed" "Error" "Main"
     }
     
-    # Step 14: Install Syncthing
-    Write-Log ("Step 14/{0}: Installing Syncthing..." -f $totalSteps) "Info" "Main"
+    # Step 15: Install Syncthing
+    Write-Log ("Step 15/{0}: Installing Syncthing..." -f $totalSteps) "Info" "Main"
     if (Install-Syncthing) {
         $successCount++
         Write-Log "✓ Syncthing installation completed" "Info" "Main"
@@ -1298,8 +2004,8 @@ function Main {
         Write-Log "✗ Syncthing installation failed" "Error" "Main"
     }
     
-    # Step 15: Install VLC
-    Write-Log ("Step 15/{0}: Installing VLC..." -f $totalSteps) "Info" "Main"
+    # Step 16: Install VLC
+    Write-Log ("Step 16/{0}: Installing VLC..." -f $totalSteps) "Info" "Main"
     if (Install-VLC) {
         $successCount++
         Write-Log "✓ VLC installation completed" "Info" "Main"
@@ -1307,8 +2013,8 @@ function Main {
         Write-Log "✗ VLC installation failed" "Error" "Main"
     }
     
-    # Step 16: Install Zalo
-    Write-Log ("Step 16/{0}: Installing Zalo..." -f $totalSteps) "Info" "Main"
+    # Step 17: Install Zalo
+    Write-Log ("Step 17/{0}: Installing Zalo..." -f $totalSteps) "Info" "Main"
     if (Install-Zalo) {
         $successCount++
         Write-Log "✓ Zalo installation completed" "Info" "Main"
@@ -1316,8 +2022,34 @@ function Main {
         Write-Log "✗ Zalo installation failed" "Error" "Main"
     }
     
-    # Step 17: Show Microsoft Office Installation Information
-    Write-Log ("Step 17/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
+    # Step 18: Install PC Manager
+    Write-Log ("Step 18/{0}: Installing PC Manager..." -f $totalSteps) "Info" "Main"
+    if (Install-PCManager) {
+        $successCount++
+        Write-Log "✓ PC Manager installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ PC Manager installation failed" "Error" "Main"
+        Write-Log "Showing alternative installation methods..." "Info" "Main"
+        Show-PCManagerAlternativeInfo
+    }
+    # Step 19: Install Pure Battery Add-on
+    Write-Log ("Step 19/{0}: Installing Pure Battery Add-on..." -f $totalSteps) "Info" "Main"
+    if (Install-PureBatteryAddon) {
+        $successCount++
+        Write-Log "✓ Pure Battery Add-on installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Pure Battery Add-on installation failed" "Error" "Main"
+    }
+    # Step 20: Install Windows Terminal
+    Write-Log ("Step 20/{0}: Installing Windows Terminal..." -f $totalSteps) "Info" "Main"
+    if (Install-WindowsTerminal) {
+        $successCount++
+        Write-Log "✓ Windows Terminal installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
+    }
+    # Step 21: Show Microsoft Office Installation Information
+    Write-Log ("Step 21/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
     if (Show-MicrosoftOfficeInfo) {
         $successCount++
         Write-Log "✓ Microsoft Office information provided" "Info" "Main"
@@ -1332,25 +2064,29 @@ function Main {
     if ($successCount -eq $totalSteps) {
         Write-Log "🎉 All installations completed successfully!" "Info" "Main"
         Write-Log "Next steps:" "Info" "Main"
-        Write-Log "1. You can now use 'scoop install <package>' to install packages" "Info" "Main"
-        Write-Log "2. Run 'git --version' to verify Git installation" "Info" "Main"
-        Write-Log "3. Run 'code' to launch VSCode" "Info" "Main"
-        Write-Log "4. Run 'cursor' to launch Cursor AI Editor" "Info" "Main"
-        Write-Log "5. Run 'discord' to launch Discord" "Info" "Main"
-        Write-Log "6. Run 'chrome' to launch Google Chrome" "Info" "Main"
-        Write-Log "7. Run 'notion' to launch Notion" "Info" "Main"
-        Write-Log "8. Run 'obsidian' to launch Obsidian" "Info" "Main"
-        Write-Log "9. Run 'powertoys' to launch PowerToys" "Info" "Main"
-        Write-Log "10. Press 'Alt+Space' to launch Flowlauncher" "Info" "Main"
-        Write-Log "11. FlowLauncher settings are now synchronized with your dotfiles repository" "Info" "Main"
-        Write-Log "12. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
-        Write-Log "13. Look for QuickShare in your system tray or Start menu" "Info" "Main"
-        Write-Log "14. Run 'syncthing' to launch Syncthing" "Info" "Main"
-        Write-Log "15. Run 'vlc' to launch VLC Media Player" "Info" "Main"
-        Write-Log "16. Look for Zalo in your Start menu or desktop" "Info" "Main"
-        Write-Log "17. Install Microsoft Office manually using the guide above" "Info" "Main"
-        Write-Log "18. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "19. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "1. You can now use 'winget install <package>' to install packages" "Info" "Main"
+        Write-Log "2. You can now use 'scoop install <package>' to install packages" "Info" "Main"
+        Write-Log "3. Run 'git --version' to verify Git installation" "Info" "Main"
+        Write-Log "4. Run 'code' to launch VSCode" "Info" "Main"
+        Write-Log "5. Run 'cursor' to launch Cursor AI Editor" "Info" "Main"
+        Write-Log "6. Run 'discord' to launch Discord" "Info" "Main"
+        Write-Log "7. Run 'chrome' to launch Google Chrome" "Info" "Main"
+        Write-Log "8. Run 'notion' to launch Notion" "Info" "Main"
+        Write-Log "9. Run 'obsidian' to launch Obsidian" "Info" "Main"
+        Write-Log "10. Run 'powertoys' to launch PowerToys" "Info" "Main"
+        Write-Log "11. Press 'Alt+Space' to launch Flowlauncher" "Info" "Main"
+        Write-Log "12. FlowLauncher settings are now synchronized with your dotfiles repository" "Info" "Main"
+        Write-Log "13. Run 'protonvpn' to launch ProtonVPN" "Info" "Main"
+        Write-Log "14. Look for QuickShare in your system tray or Start menu" "Info" "Main"
+        Write-Log "15. Run 'syncthing' to launch Syncthing" "Info" "Main"
+        Write-Log "16. Run 'vlc' to launch VLC Media Player" "Info" "Main"
+        Write-Log "17. Look for Zalo in your Start menu or desktop" "Info" "Main"
+        Write-Log "18. Look for PC Manager in your Start menu or Microsoft Store" "Info" "Main"
+        Write-Log "19. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
+        Write-Log "20. Run 'winget --help' to see available commands" "Info" "Main"
+        Write-Log "21. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "22. Visit https://winget.run/ for winget packages" "Info" "Main"
+        Write-Log "23. Visit https://scoop.sh/ for more information" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
