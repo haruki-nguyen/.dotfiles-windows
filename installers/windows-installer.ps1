@@ -12,13 +12,18 @@
 .PARAMETER LogLevel
     Logging level: Debug, Info, Warning, Error. Default: Info
     
+.PARAMETER GitHubEmail
+    GitHub email for SSH key comment. Optional.
+    
 .EXAMPLE
     .\windows-installer.ps1 -LogLevel Debug
 #>
 
 param(
     [ValidateSet("Debug", "Info", "Warning", "Error")]
-    [string]$LogLevel = "Info"
+    [string]$LogLevel = "Info",
+    [Parameter(Mandatory = $false)]
+    [string]$GitHubEmail
 )
 
 #region Logging Functions
@@ -1858,6 +1863,52 @@ function Install-WindowsTerminal {
 }
 #endregion
 
+#region GitHub SSH Setup
+function Setup-GitHubSSH {
+    Write-Log "Setting up GitHub SSH..." "Info" "GitHubSSH"
+
+    $sshDir = "$env:USERPROFILE\.ssh"
+    $keyPath = Join-Path $sshDir "id_ed25519"
+    $pubKeyPath = "$keyPath.pub"
+    $email = $GitHubEmail
+
+    if (-not $email) {
+        $email = Read-Host "Enter your GitHub email for SSH key comment"
+    }
+
+    # Generate SSH key if it doesn't exist
+    if (-not (Test-Path $keyPath)) {
+        if (-not (Test-Path $sshDir)) {
+            New-Item -ItemType Directory -Path $sshDir -Force | Out-Null
+        }
+        Write-Log "Generating new SSH key..." "Info" "GitHubSSH"
+        ssh-keygen -t ed25519 -C $email -f $keyPath -N ""
+        Write-Log "SSH key generated at $keyPath" "Info" "GitHubSSH"
+    } else {
+        Write-Log "SSH key already exists at $keyPath" "Info" "GitHubSSH"
+    }
+
+    # Start ssh-agent and add key
+    Write-Log "Starting ssh-agent and adding SSH key..." "Info" "GitHubSSH"
+    Start-Service ssh-agent -ErrorAction SilentlyContinue
+    $env:SSH_AUTH_SOCK = (Get-ChildItem -Path "/tmp/ssh-*/*agent*" -ErrorAction SilentlyContinue | Select-Object -First 1).FullName
+    ssh-add $keyPath
+
+    # Copy public key to clipboard
+    if (Test-Command "Set-Clipboard") {
+        Get-Content $pubKeyPath | Set-Clipboard
+        Write-Log "SSH public key copied to clipboard." "Info" "GitHubSSH"
+    } elseif (Test-Command "clip") {
+        Get-Content $pubKeyPath | clip
+        Write-Log "SSH public key copied to clipboard using clip.exe." "Info" "GitHubSSH"
+    } else {
+        Write-Log "Could not copy SSH public key to clipboard. Please copy it manually from $pubKeyPath" "Warning" "GitHubSSH"
+    }
+
+    Write-Log "Add your SSH key to GitHub: https://github.com/settings/keys" "Info" "GitHubSSH"
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -1890,6 +1941,8 @@ function Main {
     if (Install-Git) {
         $successCount++
         Write-Log "✓ Git installation completed" "Info" "Main"
+        # Setup GitHub SSH after Git is installed
+        Setup-GitHubSSH
     } else {
         Write-Log "✗ Git installation failed" "Error" "Main"
     }
@@ -2093,6 +2146,20 @@ function Main {
     }
     
     Write-Log "=== Windows Dotfiles Installer Completed ===" "Info" "Main"
+
+    # Create 'My-Data' folder in Documents
+    $documentsPath = [Environment]::GetFolderPath('MyDocuments')
+    $myDataPath = Join-Path $documentsPath 'My-Data'
+    if (-not (Test-Path $myDataPath)) {
+        try {
+            New-Item -ItemType Directory -Path $myDataPath -Force | Out-Null
+            Write-Log "Created 'My-Data' folder at $myDataPath" "Info" "Main"
+        } catch {
+            Write-Log "Failed to create 'My-Data' folder at ${myDataPath}: $($_.Exception.Message)" "Error" "Main"
+        }
+    } else {
+        Write-Log "'My-Data' folder already exists at $myDataPath" "Info" "Main"
+    }
 }
 #endregion
 
