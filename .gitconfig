@@ -1,1 +1,4 @@
-./shared-dotfiles/.gitconfig
+[core]
+	editor = notepad
+[include]
+    path = C:\\Users\\nmdex\\.dotfiles-windows\\shared-dotfiles\\.gitconfig
