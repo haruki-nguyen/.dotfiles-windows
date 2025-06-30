@@ -839,34 +839,95 @@ function Show-PowerToysAlternativeInfo {
 }
 #endregion
 
-#region Microsoft Office Installation Information
-function Show-MicrosoftOfficeInfo {
-    Write-Log "=== Microsoft Office Home and Student 2021 Installation Guide ===" "Info" "Office"
-    Write-Log "Microsoft Office cannot be installed via Scoop due to licensing requirements." "Info" "Office"
-    Write-Log "Please follow these steps to install Microsoft Office manually:" "Info" "Office"
-    Write-Log " " "Info" "Office"
-    Write-Log "📋 Manual Installation Steps:" "Info" "Office"
-    Write-Log "1. Visit: https://www.microsoft.com/en-us/microsoft-365/try" "Info" "Office"
-    Write-Log "2. Sign in with your Microsoft account" "Info" "Office"
-    Write-Log "3. Choose 'Microsoft Office Home and Student 2021'" "Info" "Office"
-    Write-Log "4. Purchase or enter your product key" "Info" "Office"
-    Write-Log "5. Download the Office installer" "Info" "Office"
-    Write-Log "6. Run the installer and follow the setup wizard" "Info" "Office"
-    Write-Log "7. Activate Office with your product key when prompted" "Info" "Office"
-    Write-Log " " "Info" "Office"
-    Write-Log "💡 Tips:" "Info" "Office"
-    Write-Log "- Office Home and Student 2021 includes: Word, Excel, PowerPoint" "Info" "Office"
-    Write-Log "- One-time purchase (no subscription required)" "Info" "Office"
-    Write-Log "- Valid for 1 PC (Windows or Mac)" "Info" "Office"
-    Write-Log "- Product key is required for activation" "Info" "Office"
-    Write-Log " " "Info" "Office"
-    Write-Log "🔗 Useful Links:" "Info" "Office"
-    Write-Log "- Office 2021 Home & Student: https://www.microsoft.com/en-us/microsoft-365/p/office-home-student-2021/CFQ7TTC0K7C8" "Info" "Office"
-    Write-Log "- Office Support: https://support.microsoft.com/office" "Info" "Office"
-    Write-Log "- Product Key Help: https://support.microsoft.com/en-us/office/find-your-office-product-key-032c9a43-8b0c-4d8a-9e3a-6e0c1c6c6c6c" "Info" "Office"
-    Write-Log "=== End of Microsoft Office Installation Guide ===" "Info" "Office"
-    
-    return $true
+#region Microsoft Office 365 Installation
+function Install-Office365 {
+    Write-Log "Starting Microsoft Office 365 installation..." "Info" "Office365"
+    try {
+        $officeInstalled = $false
+        $detectionMethod = ""
+
+        # Check for Office via winget
+        try {
+            Write-Log "Checking winget for Microsoft.Office..." "Debug" "Office365"
+            $wingetList = winget list "Microsoft.Office" 2>$null
+            if ($wingetList -match "Microsoft.Office") {
+                $officeInstalled = $true
+                $detectionMethod = "winget"
+                Write-Log "Microsoft Office 365 is already installed via winget. Skipping installation." "Info" "Office365"
+            }
+        } catch {
+            Write-Log "winget check failed, continuing with other checks..." "Debug" "Office365"
+        }
+
+        # Check for Office via Get-AppxPackage
+        if (-not $officeInstalled) {
+            try {
+                Write-Log "Checking AppxPackage for Office..." "Debug" "Office365"
+                $officePackages = Get-AppxPackage -AllUsers | Where-Object { $_.Name -like "*Office*" -or $_.Name -like "*Microsoft.Office*" }
+                if ($officePackages) {
+                    $officeInstalled = $true
+                    $detectionMethod = "AppxPackage"
+                    Write-Log "Microsoft Office is already installed (found via AppxPackage). Skipping installation." "Info" "Office365"
+                }
+            } catch {
+                Write-Log "AppxPackage check failed, continuing with other checks..." "Debug" "Office365"
+            }
+        }
+
+        # Check for Office in Program Files
+        if (-not $officeInstalled) {
+            $officePaths = @(
+                "${env:ProgramFiles}\Microsoft Office\root\Office16\WINWORD.EXE",
+                "${env:ProgramFiles(x86)}\Microsoft Office\root\Office16\WINWORD.EXE",
+                "${env:ProgramFiles}\Microsoft Office\Office16\WINWORD.EXE",
+                "${env:ProgramFiles(x86)}\Microsoft Office\Office16\WINWORD.EXE"
+            )
+            foreach ($path in $officePaths) {
+                if (Test-Path $path) {
+                    $officeInstalled = $true
+                    $detectionMethod = "Program Files"
+                    Write-Log "Microsoft Office is already installed (found in Program Files). Skipping installation." "Info" "Office365"
+                    break
+                }
+            }
+        }
+
+        if ($officeInstalled) {
+            Write-Log "Microsoft Office installation check completed - already installed (detected via: $detectionMethod)." "Info" "Office365"
+            return $true
+        }
+
+        Write-Log "Microsoft Office not found in any expected location. Proceeding with Office 365 installation via winget..." "Info" "Office365"
+        # Install Office 365 using winget
+        Write-Log "Installing Microsoft Office 365 using winget..." "Info" "Office365"
+        Write-Log "Using winget command: winget install --id=Microsoft.Office -e --accept-source-agreements --accept-package-agreements --verbose-logs" "Debug" "Office365"
+        $process = Start-Process -FilePath "winget" -ArgumentList 'install --id=Microsoft.Office -e --accept-source-agreements --accept-package-agreements --verbose-logs' -Wait -PassThru -NoNewWindow
+        $exitCode = $process.ExitCode
+        Write-Log "winget install process exited with code: $exitCode" "Debug" "Office365"
+        if ($exitCode -eq 0) {
+            Write-Log "Microsoft Office 365 install command completed successfully (exit code 0)." "Info" "Office365"
+            # Wait a few seconds for registration
+            Start-Sleep -Seconds 5
+            # Fallback: check with winget and AppxPackage
+            $wingetList = winget list "Microsoft.Office" 2>$null
+            $officePackages = Get-AppxPackage -AllUsers | Where-Object { $_.Name -like "*Office*" -or $_.Name -like "*Microsoft.Office*" }
+            if (($wingetList -match "Microsoft.Office") -or $officePackages) {
+                Write-Log "Microsoft Office 365 detected after install." "Info" "Office365"
+                return $true
+            } else {
+                Write-Log "Microsoft Office 365 not detected after install, but install command succeeded. Please verify manually." "Warning" "Office365"
+                return $true
+            }
+        } else {
+            Write-Log "Microsoft Office 365 install command failed with exit code $exitCode." "Error" "Office365"
+            Write-Log "You can also install Office 365 manually from: https://apps.microsoft.com/detail/9wzdncrd29v9?hl=en-US&gl=US" "Info" "Office365"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Microsoft Office 365: $($_.Exception.Message)" "Error" "Office365"
+        Write-Log "You can also install Office 365 manually from: https://apps.microsoft.com/detail/9wzdncrd29v9?hl=en-US&gl=US" "Info" "Office365"
+        return $false
+    }
 }
 #endregion
 
@@ -2101,13 +2162,13 @@ function Main {
     } else {
         Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
     }
-    # Step 21: Show Microsoft Office Installation Information
-    Write-Log ("Step 21/{0}: Providing Microsoft Office installation information..." -f $totalSteps) "Info" "Main"
-    if (Show-MicrosoftOfficeInfo) {
+    # Step 21: Install Microsoft Office 365
+    Write-Log ("Step 21/{0}: Installing Microsoft Office 365..." -f $totalSteps) "Info" "Main"
+    if (Install-Office365) {
         $successCount++
-        Write-Log "✓ Microsoft Office information provided" "Info" "Main"
+        Write-Log "✓ Microsoft Office 365 installation completed" "Info" "Main"
     } else {
-        Write-Log "✗ Failed to show Microsoft Office information" "Error" "Main"
+        Write-Log "✗ Microsoft Office 365 installation failed" "Error" "Main"
     }
     
     # Summary

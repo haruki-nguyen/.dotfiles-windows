@@ -1,4 +1,4 @@
-# Haruki Nguyen Windows Dotfiles
+# Haruki Nguyen's Windows Dotfiles
 
 A streamlined setup for a Windows development environment with a single automated PowerShell script.
 
