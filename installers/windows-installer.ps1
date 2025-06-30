@@ -2016,6 +2016,125 @@ function Create-GitconfigSymlink {
 }
 #endregion
 
+#region UniKey Installation
+function Install-UniKey {
+    Write-Log "Starting UniKey installation..." "Info" "UniKey"
+    
+    try {
+        $unikeyDir = "C:\\Users\\nmdex\\AppData\\Local\\Programs\\UniKey"
+        $unikeyExePath = Join-Path $unikeyDir "UniKeyNT.exe"
+        $downloadPageUrl = "https://www.unikey.org/download.html"
+        $tempDir = [System.IO.Path]::GetTempPath()
+        $unikeyZipPath = $null
+        $unikeyZipUrl = $null
+
+        # Scrape the download page for the latest 64-bit zip link
+        Write-Log "Fetching UniKey download page..." "Info" "UniKey"
+        $page = Invoke-WebRequest -Uri $downloadPageUrl -UseBasicParsing
+        # Use regex to find the first win64 zip link in the raw HTML
+        $unikeyZipUrl = ($page.Content -match 'href=["'']([^"'']*win64[^"'']*\.zip)["'']') ? $matches[1] : $null
+        if ($unikeyZipUrl) {
+            if ($unikeyZipUrl -notmatch '^https?://') {
+                $unikeyZipUrl = "https://www.unikey.org$unikeyZipUrl"
+            }
+            $unikeyZipFileName = [System.IO.Path]::GetFileName($unikeyZipUrl)
+            $unikeyZipPath = Join-Path $tempDir $unikeyZipFileName
+            Write-Log "Latest UniKey zip URL: $unikeyZipUrl" "Info" "UniKey"
+        } else {
+            Write-Log "Could not find the latest UniKey 64-bit zip link on the download page." "Error" "UniKey"
+            return $false
+        }
+
+        # Check if UniKey is already installed
+        if (Test-Path $unikeyExePath) {
+            Write-Log "UniKey is already installed at $unikeyExePath. Skipping installation." "Info" "UniKey"
+            return $true
+        }
+
+        # Create target directory if it doesn't exist
+        if (-not (Test-Path $unikeyDir)) {
+            Write-Log "Creating UniKey directory at $unikeyDir..." "Info" "UniKey"
+            New-Item -ItemType Directory -Path $unikeyDir -Force | Out-Null
+        }
+
+        # Download UniKey zip
+        Write-Log "Downloading UniKey from $unikeyZipUrl..." "Info" "UniKey"
+        Invoke-WebRequest -Uri $unikeyZipUrl -OutFile $unikeyZipPath
+
+        # Extract UniKeyNT.exe from the zip
+        Write-Log "Extracting UniKeyNT.exe to $unikeyDir..." "Info" "UniKey"
+        Add-Type -AssemblyName System.IO.Compression.FileSystem
+        [System.IO.Compression.ZipFile]::ExtractToDirectory($unikeyZipPath, $unikeyDir)
+
+        # Check if extraction was successful
+        if (Test-Path $unikeyExePath) {
+            Write-Log "UniKey installed successfully at $unikeyExePath!" "Info" "UniKey"
+            # Clean up zip file
+            Remove-Item $unikeyZipPath -Force -ErrorAction SilentlyContinue
+            return $true
+        } else {
+            Write-Log "UniKey installation failed: UniKeyNT.exe not found after extraction." "Error" "UniKey"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install UniKey: $($_.Exception.Message)" "Error" "UniKey"
+        return $false
+    }
+}
+#endregion
+
+#region Everything Installation
+function Install-Everything {
+    Write-Log "Starting Everything installation..." "Info" "Everything"
+    try {
+        # Check if Everything is already installed via Scoop
+        $everythingInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "everything") {
+                $everythingInstalled = $true
+                Write-Log "Everything is already installed via Scoop. Skipping installation." "Info" "Everything"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        # Also check if everything command is available
+        if (-not $everythingInstalled -and (Test-Command "everything")) {
+            Write-Log "Everything is already installed. Skipping installation." "Info" "Everything"
+            return $true
+        }
+        if ($everythingInstalled) {
+            return $true
+        }
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install Everything." "Error" "Everything"
+            return $false
+        }
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install Everything." "Error" "Everything"
+            return $false
+        }
+        # Install Everything using Scoop extras bucket
+        Write-Log "Installing Everything using Scoop extras bucket..." "Info" "Everything"
+        scoop install extras/everything
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "everything") {
+            Write-Log "Everything installed successfully via Scoop!" "Info" "Everything"
+            return $true
+        } else {
+            Write-Log "Everything installation failed - not found in Scoop list" "Error" "Everything"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Everything: $($_.Exception.Message)" "Error" "Everything"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2023,7 +2142,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 21
+    $totalSteps = 23
     
     # Step 1: Install winget
     Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
@@ -2188,8 +2307,53 @@ function Main {
         Write-Log "✗ Zalo installation failed" "Error" "Main"
     }
     
-    # Step 18: Install PC Manager
-    Write-Log ("Step 18/{0}: Installing PC Manager..." -f $totalSteps) "Info" "Main"
+    # Step 18: Install UniKey
+    Write-Log ("Step 18/{0}: Installing UniKey..." -f $totalSteps) "Info" "Main"
+    if (Install-UniKey) {
+        $successCount++
+        Write-Log "✓ UniKey installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ UniKey installation failed" "Error" "Main"
+    }
+    
+    # Step 19: Install Everything
+    Write-Log ("Step 19/{0}: Installing Everything..." -f $totalSteps) "Info" "Main"
+    if (Install-Everything) {
+        $successCount++
+        Write-Log "✓ Everything installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Everything installation failed" "Error" "Main"
+    }
+    
+    # Step 20: Install Pure Battery Add-on
+    Write-Log ("Step 20/{0}: Installing Pure Battery Add-on..." -f $totalSteps) "Info" "Main"
+    if (Install-PureBatteryAddon) {
+        $successCount++
+        Write-Log "✓ Pure Battery Add-on installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Pure Battery Add-on installation failed" "Error" "Main"
+    }
+    
+    # Step 21: Install Windows Terminal
+    Write-Log ("Step 21/{0}: Installing Windows Terminal..." -f $totalSteps) "Info" "Main"
+    if (Install-WindowsTerminal) {
+        $successCount++
+        Write-Log "✓ Windows Terminal installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
+    }
+    
+    # Step 22: Install Microsoft Office 365
+    Write-Log ("Step 22/{0}: Installing Microsoft Office 365..." -f $totalSteps) "Info" "Main"
+    if (Install-Office365) {
+        $successCount++
+        Write-Log "✓ Microsoft Office 365 installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Microsoft Office 365 installation failed" "Error" "Main"
+    }
+    
+    # Step 23: Install PC Manager
+    Write-Log ("Step 23/{0}: Installing PC Manager..." -f $totalSteps) "Info" "Main"
     if (Install-PCManager) {
         $successCount++
         Write-Log "✓ PC Manager installation completed" "Info" "Main"
@@ -2197,30 +2361,6 @@ function Main {
         Write-Log "✗ PC Manager installation failed" "Error" "Main"
         Write-Log "Showing alternative installation methods..." "Info" "Main"
         Show-PCManagerAlternativeInfo
-    }
-    # Step 19: Install Pure Battery Add-on
-    Write-Log ("Step 19/{0}: Installing Pure Battery Add-on..." -f $totalSteps) "Info" "Main"
-    if (Install-PureBatteryAddon) {
-        $successCount++
-        Write-Log "✓ Pure Battery Add-on installation completed" "Info" "Main"
-    } else {
-        Write-Log "✗ Pure Battery Add-on installation failed" "Error" "Main"
-    }
-    # Step 20: Install Windows Terminal
-    Write-Log ("Step 20/{0}: Installing Windows Terminal..." -f $totalSteps) "Info" "Main"
-    if (Install-WindowsTerminal) {
-        $successCount++
-        Write-Log "✓ Windows Terminal installation completed" "Info" "Main"
-    } else {
-        Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
-    }
-    # Step 21: Install Microsoft Office 365
-    Write-Log ("Step 21/{0}: Installing Microsoft Office 365..." -f $totalSteps) "Info" "Main"
-    if (Install-Office365) {
-        $successCount++
-        Write-Log "✓ Microsoft Office 365 installation completed" "Info" "Main"
-    } else {
-        Write-Log "✗ Microsoft Office 365 installation failed" "Error" "Main"
     }
     
     # Summary
@@ -2247,12 +2387,13 @@ function Main {
         Write-Log "15. Run 'syncthing' to launch Syncthing" "Info" "Main"
         Write-Log "16. Run 'vlc' to launch VLC Media Player" "Info" "Main"
         Write-Log "17. Look for Zalo in your Start menu or desktop" "Info" "Main"
-        Write-Log "18. Look for PC Manager in your Start menu or Microsoft Store" "Info" "Main"
-        Write-Log "19. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
-        Write-Log "20. Run 'winget --help' to see available commands" "Info" "Main"
-        Write-Log "21. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "22. Visit https://winget.run/ for winget packages" "Info" "Main"
-        Write-Log "23. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "18. Look for UniKey in your Start menu or desktop" "Info" "Main"
+        Write-Log "19. Run 'everything' to launch Everything search" "Info" "Main"
+        Write-Log "20. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
+        Write-Log "21. Run 'winget --help' to see available commands" "Info" "Main"
+        Write-Log "22. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "23. Visit https://winget.run/ for winget packages" "Info" "Main"
+        Write-Log "24. Visit https://scoop.sh/ for more information" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
