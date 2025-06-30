@@ -1970,6 +1970,52 @@ function Setup-GitHubSSH {
 }
 #endregion
 
+#region Gitconfig Symlink
+function Create-GitconfigSymlink {
+    Write-Log "Creating symlink for .gitconfig in user home directory..." "Info" "GitconfigSymlink"
+    try {
+        $dotfilesGitconfig = Join-Path "$PSScriptRoot" "..\.gitconfig" | Resolve-Path -ErrorAction Stop
+        $homeGitconfig = Join-Path $env:USERPROFILE ".gitconfig"
+
+        # Check if symlink already exists
+        if (Test-Path $homeGitconfig) {
+            $existingItem = Get-Item $homeGitconfig -ErrorAction SilentlyContinue
+            if ($existingItem.LinkType -eq "SymbolicLink") {
+                $targetPath = $existingItem.Target
+                if ($targetPath -eq $dotfilesGitconfig) {
+                    Write-Log ".gitconfig symlink already exists and points to the correct dotfiles path. Skipping." "Info" "GitconfigSymlink"
+                    return $true
+                } else {
+                    Write-Log ".gitconfig symlink exists but points to a different path: $targetPath" "Warning" "GitconfigSymlink"
+                    Write-Log "Removing existing symlink..." "Info" "GitconfigSymlink"
+                    Remove-Item $homeGitconfig -Force
+                }
+            } else {
+                Write-Log ".gitconfig exists but is not a symlink. Creating backup..." "Info" "GitconfigSymlink"
+                $backupPath = "$homeGitconfig.backup"
+                Copy-Item $homeGitconfig $backupPath -Force
+                Write-Log "Backup created at: $backupPath" "Info" "GitconfigSymlink"
+                Remove-Item $homeGitconfig -Force
+            }
+        }
+
+        # Create symbolic link
+        Write-Log "Creating symbolic link from dotfiles to home .gitconfig..." "Info" "GitconfigSymlink"
+        $result = New-Item -ItemType SymbolicLink -Path $homeGitconfig -Target $dotfilesGitconfig -ErrorAction Stop
+        if ($result -and (Test-Path $homeGitconfig)) {
+            Write-Log ".gitconfig symlink created successfully!" "Info" "GitconfigSymlink"
+            return $true
+        } else {
+            Write-Log "Failed to create .gitconfig symlink" "Error" "GitconfigSymlink"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to create .gitconfig symlink: $($_.Exception.Message)" "Error" "GitconfigSymlink"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2004,6 +2050,12 @@ function Main {
         Write-Log "✓ Git installation completed" "Info" "Main"
         # Setup GitHub SSH after Git is installed
         Setup-GitHubSSH
+        # Create .gitconfig symlink after Git is installed
+        if (Create-GitconfigSymlink) {
+            Write-Log "✓ .gitconfig symlink created" "Info" "Main"
+        } else {
+            Write-Log "✗ Failed to create .gitconfig symlink" "Error" "Main"
+        }
     } else {
         Write-Log "✗ Git installation failed" "Error" "Main"
     }
