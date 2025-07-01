@@ -2135,6 +2135,44 @@ function Install-Everything {
 }
 #endregion
 
+#region Windows Terminal Settings Symlink
+function Create-WindowsTerminalSettingsSymlink {
+    Write-Log "Creating symlink for Windows Terminal settings.json..." "Info" "WindowsTerminalSymlink"
+    try {
+        # Use absolute path to dotfiles settings.json
+        $dotfilesSettings = "C:\Users\nmdex\.dotfiles-windows\.config\Windows-Terminal\settings.json"
+        $localStateDir = Join-Path $env:USERPROFILE "AppData\Local\Packages\Microsoft.WindowsTerminal_8wekyb3d8bbwe\LocalState"
+        $targetSettings = Join-Path $localStateDir "settings.json"
+
+        # Ensure LocalState directory exists
+        if (-not (Test-Path $localStateDir)) {
+            Write-Log "Creating LocalState directory at $localStateDir..." "Info" "WindowsTerminalSymlink"
+            New-Item -ItemType Directory -Path $localStateDir -Force | Out-Null
+        }
+
+        # Always remove the existing settings.json (file or symlink)
+        if (Test-Path $targetSettings) {
+            Write-Log "Removing existing settings.json at $targetSettings..." "Info" "WindowsTerminalSymlink"
+            Remove-Item $targetSettings -Force
+        }
+
+        # Create symbolic link
+        Write-Log "Creating symbolic link from $dotfilesSettings to $targetSettings..." "Info" "WindowsTerminalSymlink"
+        $result = New-Item -ItemType SymbolicLink -Path $targetSettings -Target $dotfilesSettings -ErrorAction Stop
+        if ($result -and (Test-Path $targetSettings)) {
+            Write-Log "settings.json symlink created successfully!" "Info" "WindowsTerminalSymlink"
+            return $true
+        } else {
+            Write-Log "Failed to create settings.json symlink" "Error" "WindowsTerminalSymlink"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to create settings.json symlink: $($_.Exception.Message)" "Error" "WindowsTerminalSymlink"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2339,6 +2377,12 @@ function Main {
     if (Install-WindowsTerminal) {
         $successCount++
         Write-Log "✓ Windows Terminal installation completed" "Info" "Main"
+        # Create symlink for settings.json
+        if (Create-WindowsTerminalSettingsSymlink) {
+            Write-Log "✓ Windows Terminal settings.json symlink created" "Info" "Main"
+        } else {
+            Write-Log "✗ Windows Terminal settings.json symlink creation failed" "Error" "Main"
+        }
     } else {
         Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
     }
