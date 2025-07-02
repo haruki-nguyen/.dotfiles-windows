@@ -20,11 +20,13 @@
 #>
 
 param(
-    [ValidateSet("Debug", "Info", "Warning", "Error")]
     [string]$LogLevel = "Info",
-    [Parameter(Mandatory = $false)]
     [string]$GitHubEmail
 )
+
+# Performance optimizations
+$ProgressPreference = 'SilentlyContinue'  # Disable progress bars for faster downloads
+$ErrorActionPreference = 'Continue'  # Continue on non-critical errors
 
 #region Logging Functions
 function Write-Log {
@@ -56,8 +58,8 @@ function Write-Log {
         "Error" = 1
     }
     
-    $currentLogLevel = $logLevels[$LogLevel]
-    $messageLogLevel = $logLevels[$Level]
+    $currentLogLevel = if ($null -ne $LogLevel -and $logLevels.ContainsKey($LogLevel)) { $logLevels[$LogLevel] } else { 3 }
+    $messageLogLevel = if ($null -ne $Level -and $logLevels.ContainsKey($Level)) { $logLevels[$Level] } else { 3 }
     
     if ($messageLogLevel -le $currentLogLevel) {
         switch ($Level) {
@@ -77,6 +79,46 @@ function Test-Command {
     } catch {
         return $false
     }
+}
+
+# Test if FlowLauncher is installed (checks both command and executable)
+function Test-FlowLauncherInstalled {
+    try {
+        # Check if flowlauncher command is available
+        if (Test-Command "flowlauncher") {
+            return $true
+        }
+        
+        # Check if Flow.Launcher.exe exists in Scoop installation
+        $flowLauncherPath = "$env:USERPROFILE\scoop\apps\flow-launcher\current\Flow.Launcher.exe"
+        if (Test-Path $flowLauncherPath) {
+            return $true
+        }
+        
+        # Check via Scoop list (cached for performance)
+        try {
+            if (-not $global:ScoopListCache) {
+                $global:ScoopListCache = scoop list 2>$null
+            }
+            if ($global:ScoopListCache -match "flow-launcher") {
+                return $true
+            }
+        } catch {
+            # Continue with other checks
+        }
+        
+        return $false
+    } catch {
+        return $false
+    }
+}
+
+# Cache for Scoop list to avoid repeated calls
+$global:ScoopListCache = $null
+
+# Function to refresh Scoop cache
+function Clear-ScoopListCache {
+    $global:ScoopListCache = $null
 }
 #endregion
 
@@ -939,8 +981,10 @@ function Install-Flowlauncher {
         # Check if Flowlauncher is already installed via Scoop
         $flowlauncherInstalled = $false
         try {
-            $scoopList = scoop list 2>$null
-            if ($scoopList -match "flow-launcher") {
+            if (-not $global:ScoopListCache) {
+                $global:ScoopListCache = scoop list 2>$null
+            }
+            if ($global:ScoopListCache -match "flow-launcher") {
                 $flowlauncherInstalled = $true
                 Write-Log "Flowlauncher is already installed via Scoop. Skipping installation." "Info" "Flowlauncher"
             }
@@ -974,8 +1018,11 @@ function Install-Flowlauncher {
         Write-Log "Installing Flowlauncher using Scoop extras bucket..." "Info" "Flowlauncher"
         scoop install extras/flow-launcher
         
-        # Check if installation was successful by checking Scoop list
+        # Clear cache and check if installation was successful
+        Clear-ScoopListCache
         $scoopList = scoop list 2>$null
+        $global:ScoopListCache = $scoopList  # Update cache
+        
         if ($scoopList -match "flow-launcher") {
             Write-Log "Flowlauncher installed successfully via Scoop!" "Info" "Flowlauncher"
             return $true
@@ -995,13 +1042,23 @@ function Configure-FlowLauncherSettings {
     Write-Log "Starting FlowLauncher settings configuration..." "Info" "FlowLauncherConfig"
     
     try {
-        # Define paths
-        $dotfilesSettingsPath = "C:\Users\nmdex\.dotfiles-windows\.config\FlowLauncher\Settings.json"
-        $flowlauncherSettingsPath = "C:\Users\nmdex\scoop\apps\flow-launcher\current\app-1.20.1\UserData\Settings\Settings.json"
+        # Define paths (use dynamic version detection)
+        $dotfilesSettingsPath = "$env:USERPROFILE\.dotfiles-windows\.config\FlowLauncher\Settings.json"
+        $flowlauncherBasePath = "$env:USERPROFILE\scoop\apps\flow-launcher\current"
+        
+        # Find the app directory dynamically
+        $appDirs = Get-ChildItem -Path $flowlauncherBasePath -Directory -Filter "app-*" -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+        if ($appDirs.Count -eq 0) {
+            Write-Log "FlowLauncher app directory not found in: $flowlauncherBasePath" "Error" "FlowLauncherConfig"
+            return $false
+        }
+        
+        $latestAppDir = $appDirs[0].FullName
+        $flowlauncherSettingsPath = Join-Path $latestAppDir "UserData\Settings\Settings.json"
         $flowlauncherSettingsDir = Split-Path $flowlauncherSettingsPath -Parent
         
         # Check if FlowLauncher is installed
-        if (-not (Test-Command "flowlauncher")) {
+        if (-not (Test-FlowLauncherInstalled)) {
             Write-Log "FlowLauncher is not installed. Cannot configure settings." "Error" "FlowLauncherConfig"
             return $false
         }
@@ -2135,6 +2192,65 @@ function Install-Everything {
 }
 #endregion
 
+#region KeePassXC Installation
+function Install-KeePassXC {
+    Write-Log "Starting KeePassXC installation..." "Info" "KeePassXC"
+    
+    try {
+        # Check if KeePassXC is already installed via Scoop
+        $keepassxcInstalled = $false
+        try {
+            $scoopList = scoop list 2>$null
+            if ($scoopList -match "keepassxc") {
+                $keepassxcInstalled = $true
+                Write-Log "KeePassXC is already installed via Scoop. Skipping installation." "Info" "KeePassXC"
+            }
+        } catch {
+            # If scoop list fails, continue with command check
+        }
+        
+        # Also check if keepassxc command is available
+        if (-not $keepassxcInstalled -and (Test-Command "keepassxc")) {
+            Write-Log "KeePassXC is already installed. Skipping installation." "Info" "KeePassXC"
+            return $true
+        }
+        
+        if ($keepassxcInstalled) {
+            return $true
+        }
+        
+        # Check if Scoop is available
+        if (-not (Test-Command "scoop")) {
+            Write-Log "Scoop is not available. Cannot install KeePassXC." "Error" "KeePassXC"
+            return $false
+        }
+        
+        # Add extras bucket if needed
+        if (-not (Add-ScoopExtrasBucket)) {
+            Write-Log "Failed to add extras bucket. Cannot install KeePassXC." "Error" "KeePassXC"
+            return $false
+        }
+        
+        # Install KeePassXC using Scoop extras bucket
+        Write-Log "Installing KeePassXC using Scoop extras bucket..." "Info" "KeePassXC"
+        scoop install extras/keepassxc
+        
+        # Check if installation was successful by checking Scoop list
+        $scoopList = scoop list 2>$null
+        if ($scoopList -match "keepassxc") {
+            Write-Log "KeePassXC installed successfully via Scoop!" "Info" "KeePassXC"
+            return $true
+        } else {
+            Write-Log "KeePassXC installation failed - not found in Scoop list" "Error" "KeePassXC"
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install KeePassXC: $($_.Exception.Message)" "Error" "KeePassXC"
+        return $false
+    }
+}
+#endregion
+
 #region Windows Terminal Settings Symlink
 function Create-WindowsTerminalSettingsSymlink {
     Write-Log "Creating symlink for Windows Terminal settings.json..." "Info" "WindowsTerminalSymlink"
@@ -2180,7 +2296,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 23
+    $totalSteps = 24
     
     # Step 1: Install winget
     Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
@@ -2363,8 +2479,17 @@ function Main {
         Write-Log "✗ Everything installation failed" "Error" "Main"
     }
     
-    # Step 20: Install Pure Battery Add-on
-    Write-Log ("Step 20/{0}: Installing Pure Battery Add-on..." -f $totalSteps) "Info" "Main"
+    # Step 20: Install KeePassXC
+    Write-Log ("Step 20/{0}: Installing KeePassXC..." -f $totalSteps) "Info" "Main"
+    if (Install-KeePassXC) {
+        $successCount++
+        Write-Log "✓ KeePassXC installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ KeePassXC installation failed" "Error" "Main"
+    }
+    
+    # Step 21: Install Pure Battery Add-on
+    Write-Log ("Step 21/{0}: Installing Pure Battery Add-on..." -f $totalSteps) "Info" "Main"
     if (Install-PureBatteryAddon) {
         $successCount++
         Write-Log "✓ Pure Battery Add-on installation completed" "Info" "Main"
@@ -2372,8 +2497,8 @@ function Main {
         Write-Log "✗ Pure Battery Add-on installation failed" "Error" "Main"
     }
     
-    # Step 21: Install Windows Terminal
-    Write-Log ("Step 21/{0}: Installing Windows Terminal..." -f $totalSteps) "Info" "Main"
+    # Step 22: Install Windows Terminal
+    Write-Log ("Step 22/{0}: Installing Windows Terminal..." -f $totalSteps) "Info" "Main"
     if (Install-WindowsTerminal) {
         $successCount++
         Write-Log "✓ Windows Terminal installation completed" "Info" "Main"
@@ -2387,8 +2512,8 @@ function Main {
         Write-Log "✗ Windows Terminal installation failed" "Error" "Main"
     }
     
-    # Step 22: Install Microsoft Office 365
-    Write-Log ("Step 22/{0}: Installing Microsoft Office 365..." -f $totalSteps) "Info" "Main"
+    # Step 23: Install Microsoft Office 365
+    Write-Log ("Step 23/{0}: Installing Microsoft Office 365..." -f $totalSteps) "Info" "Main"
     if (Install-Office365) {
         $successCount++
         Write-Log "✓ Microsoft Office 365 installation completed" "Info" "Main"
@@ -2396,8 +2521,8 @@ function Main {
         Write-Log "✗ Microsoft Office 365 installation failed" "Error" "Main"
     }
     
-    # Step 23: Install PC Manager
-    Write-Log ("Step 23/{0}: Installing PC Manager..." -f $totalSteps) "Info" "Main"
+    # Step 24: Install PC Manager
+    Write-Log ("Step 24/{0}: Installing PC Manager..." -f $totalSteps) "Info" "Main"
     if (Install-PCManager) {
         $successCount++
         Write-Log "✓ PC Manager installation completed" "Info" "Main"
@@ -2433,7 +2558,8 @@ function Main {
         Write-Log "17. Look for Zalo in your Start menu or desktop" "Info" "Main"
         Write-Log "18. Look for UniKey in your Start menu or desktop" "Info" "Main"
         Write-Log "19. Run 'everything' to launch Everything search" "Info" "Main"
-        Write-Log "20. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
+        Write-Log "20. Run 'keepassxc' to launch KeePassXC password manager" "Info" "Main"
+        Write-Log "21. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
         Write-Log "21. Run 'winget --help' to see available commands" "Info" "Main"
         Write-Log "22. Run 'scoop help' to see available commands" "Info" "Main"
         Write-Log "23. Visit https://winget.run/ for winget packages" "Info" "Main"
@@ -2465,7 +2591,14 @@ function Main {
 try {
     Main
 } catch {
-    Write-Log "Critical error in main execution: $($_.Exception.Message)" "Error" "Main"
-    Write-Log "Stack trace: $($_.ScriptStackTrace)" "Debug" "Main"
+    $errorMessage = if ($null -ne $_.Exception -and $null -ne $_.Exception.Message) { $_.Exception.Message } else { "Unknown error occurred" }
+    $stackTrace = if ($null -ne $_.ScriptStackTrace) { $_.ScriptStackTrace } else { "No stack trace available" }
+    try {
+        Write-Log "Critical error in main execution: $errorMessage" "Error" "Main"
+        Write-Log "Stack trace: $stackTrace" "Debug" "Main"
+    } catch {
+        Write-Host "Critical error in main execution: $errorMessage" -ForegroundColor Red
+        Write-Host "Stack trace: $stackTrace" -ForegroundColor Gray
+    }
     exit 1
 }
