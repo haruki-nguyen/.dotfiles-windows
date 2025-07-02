@@ -2320,6 +2320,18 @@ function Enable-SyncthingStartup {
 }
 #endregion
 
+#region DaVinci Resolve Manual Installation Notification
+function Notify-DaVinciResolveManualInstall {
+    Write-Log "=== DaVinci Resolve Manual Installation Required ===" "Warning" "DaVinciResolve"
+    Write-Log "DaVinci Resolve cannot be installed automatically due to licensing and installer restrictions." "Warning" "DaVinciResolve"
+    Write-Log "Please download and install DaVinci Resolve manually from the official website:" "Warning" "DaVinciResolve"
+    Write-Log "  https://www.blackmagicdesign.com/products/davinciresolve" "Warning" "DaVinciResolve"
+    Write-Log "After installation, you can launch DaVinci Resolve from the Start menu." "Info" "DaVinciResolve"
+    Write-Log "=== End of DaVinci Resolve Manual Installation Notification ===" "Warning" "DaVinciResolve"
+    return $true
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2327,7 +2339,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 24
+    $totalSteps = 25
     
     # Step 1: Install winget
     Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
@@ -2569,6 +2581,10 @@ function Main {
         Show-PCManagerAlternativeInfo
     }
     
+    # Step 25: Notify user to manually install DaVinci Resolve
+    Write-Log ("Step 25/{0}: DaVinci Resolve manual installation required..." -f ($totalSteps+1)) "Info" "Main"
+    Notify-DaVinciResolveManualInstall
+    
     # Summary
     Write-Log "=== Installation Summary ===" "Info" "Main"
     Write-Log ("Completed: {0}/{1} steps successfully" -f $successCount, $totalSteps) "Info" "Main"
@@ -2601,6 +2617,7 @@ function Main {
         Write-Log "22. Run 'scoop help' to see available commands" "Info" "Main"
         Write-Log "23. Visit https://winget.run/ for winget packages" "Info" "Main"
         Write-Log "24. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "25. Notify user to manually install DaVinci Resolve" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"

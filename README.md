@@ -53,7 +53,7 @@ A comprehensive installer script that sets up your complete Windows development 
 - Installs essential development tools (Git, VSCode, Cursor AI)
 - Installs productivity applications (Discord, Chrome, Notion, Obsidian)
 - Installs system utilities (PowerToys, Flowlauncher, ProtonVPN)
-- Installs media applications (VLC, Syncthing)
+- Installs media applications (VLC, Syncthing, DaVinci Resolve [manual step])
 - Installs communication tools (Zalo, Google QuickShare)
 - Installs system management tools (PC Manager, Windows Terminal)
 - Installs Vietnamese input method (UniKey)
@@ -61,6 +61,7 @@ A comprehensive installer script that sets up your complete Windows development 
 - Sets up GitHub SSH keys
 - Configures FlowLauncher settings
 - Creates symbolic links for dotfiles
+- Notifies user to manually install DaVinci Resolve (step 25)
 
 **Usage:**
 
@@ -149,6 +150,7 @@ The installer script installs (in order):
 - **Zalo**: Vietnamese messaging app
 - **VLC Media Player**: Media player
 - **Syncthing**: File synchronization
+- **DaVinci Resolve**: Professional video editor (**manual installation required**)
 
 ### System Management
 
@@ -167,6 +169,7 @@ The installer script installs (in order):
 - Run `git --version`, `code`, `cursor`, `discord`, `chrome`, etc. to verify installations
 - Press `Alt+Space` for FlowLauncher
 - Check logs for any manual steps or errors
+- **DaVinci Resolve:** Follow the script's notification to download and install manually from [the official website](https://www.blackmagicdesign.com/products/davinciresolve)
 
 ## Maintenance
 
@@ -238,4 +241,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Note:** Some applications (e.g., Microsoft Office) may require manual installation. The scripts provide guidance where automation is not possible.
+**Note:** Some applications (e.g., Microsoft Office, DaVinci Resolve) may require manual installation. The scripts provide guidance where automation is not possible.
