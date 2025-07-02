@@ -2289,6 +2289,37 @@ function Create-WindowsTerminalSettingsSymlink {
 }
 #endregion
 
+#region Syncthing Startup Shortcut
+function Enable-SyncthingStartup {
+    Write-Log "Configuring Syncthing to run at Windows startup..." "Info" "SyncthingStartup"
+    try {
+        $syncthingExe = "$env:USERPROFILE\scoop\apps\syncthing\current\syncthing.exe"
+        if (-not (Test-Path $syncthingExe)) {
+            Write-Log "Syncthing executable not found at $syncthingExe. Cannot create startup shortcut." "Error" "SyncthingStartup"
+            return $false
+        }
+        $startupFolder = Join-Path $env:APPDATA 'Microsoft\Windows\Start Menu\Programs\Startup'
+        $shortcutPath = Join-Path $startupFolder 'Syncthing.lnk'
+        # Remove existing shortcut if present
+        if (Test-Path $shortcutPath) {
+            Remove-Item $shortcutPath -Force
+        }
+        $WshShell = New-Object -ComObject WScript.Shell
+        $shortcut = $WshShell.CreateShortcut($shortcutPath)
+        $shortcut.TargetPath = $syncthingExe
+        $shortcut.WorkingDirectory = Split-Path $syncthingExe
+        $shortcut.WindowStyle = 1
+        $shortcut.Description = "Start Syncthing at login"
+        $shortcut.Save()
+        Write-Log "Syncthing startup shortcut created at $shortcutPath" "Info" "SyncthingStartup"
+        return $true
+    } catch {
+        Write-Log "Failed to create Syncthing startup shortcut: $($_.Exception.Message)" "Error" "SyncthingStartup"
+        return $false
+    }
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2439,6 +2470,12 @@ function Main {
     if (Install-Syncthing) {
         $successCount++
         Write-Log "✓ Syncthing installation completed" "Info" "Main"
+        # Enable Syncthing to run at startup
+        if (Enable-SyncthingStartup) {
+            Write-Log "✓ Syncthing is set to run at startup" "Info" "Main"
+        } else {
+            Write-Log "✗ Failed to set Syncthing to run at startup" "Error" "Main"
+        }
     } else {
         Write-Log "✗ Syncthing installation failed" "Error" "Main"
     }
