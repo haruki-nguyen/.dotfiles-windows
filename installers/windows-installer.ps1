@@ -2307,8 +2307,9 @@ function Enable-SyncthingStartup {
         $WshShell = New-Object -ComObject WScript.Shell
         $shortcut = $WshShell.CreateShortcut($shortcutPath)
         $shortcut.TargetPath = $syncthingExe
+        $shortcut.Arguments = "-no-console"
         $shortcut.WorkingDirectory = Split-Path $syncthingExe
-        $shortcut.WindowStyle = 1
+        $shortcut.WindowStyle = 7
         $shortcut.Description = "Start Syncthing at login"
         $shortcut.Save()
         Write-Log "Syncthing startup shortcut created at $shortcutPath" "Info" "SyncthingStartup"
