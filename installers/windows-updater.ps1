@@ -65,8 +65,8 @@ function Write-Log {
         "Error" = 1
     }
     
-    $currentLogLevel = $logLevels[$LogLevel]
-    $messageLogLevel = $logLevels[$Level]
+    $currentLogLevel = if ($null -ne $LogLevel -and $logLevels.ContainsKey($LogLevel)) { $logLevels[$LogLevel] } else { 3 }
+    $messageLogLevel = if ($null -ne $Level -and $logLevels.ContainsKey($Level)) { $logLevels[$Level] } else { 3 }
     
     if ($messageLogLevel -le $currentLogLevel) {
         switch ($Level) {
@@ -228,33 +228,65 @@ function Clear-DNS {
 }
 
 function Clear-RecycleBin {
-    Write-Log "Clearing Recycle Bin (manual method)..." "Info" "Cleanup"
+    Write-Log "Clearing Recycle Bin..." "Info" "Cleanup"
     try {
+        # Try using PowerShell's built-in method first
+        try {
+            $builtinCommand = Get-Command "Clear-RecycleBin" -CommandType Cmdlet -ErrorAction SilentlyContinue
+            if ($builtinCommand) {
+                & $builtinCommand -Force -ErrorAction Stop
+                Write-Log "Recycle Bin cleared successfully using built-in method!" "Info" "Cleanup"
+                return $true
+            }
+        } catch {
+            Write-Log "Built-in Clear-RecycleBin failed, trying manual method..." "Debug" "Cleanup"
+        }
+        
+        # Fallback to manual method
+        Write-Log "Using manual Recycle Bin cleanup method..." "Debug" "Cleanup"
         $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Free -gt 0 }
         $cleared = $false
         $deletedCount = 0
+        $recycleBinFound = $false
+        
         foreach ($drive in $drives) {
             $recyclePath = Join-Path $drive.Root '$Recycle.Bin'
+            Write-Log "Checking for Recycle Bin at: $recyclePath" "Debug" "Cleanup"
+            
             if (Test-Path $recyclePath) {
+                $recycleBinFound = $true
+                Write-Log "Found Recycle Bin at: $recyclePath" "Debug" "Cleanup"
+                
                 # Remove all subfolders (each user's SID) and files
                 $items = Get-ChildItem -Path $recyclePath -Force -ErrorAction SilentlyContinue
-                foreach ($item in $items) {
-                    try {
-                        Remove-Item $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
-                        $deletedCount++
-                        $cleared = $true
-                    } catch {
-                        # Ignore errors (e.g., locked files)
+                
+                if ($items) {
+                    Write-Log "Found $($items.Count) items in Recycle Bin on drive $($drive.Root)" "Debug" "Cleanup"
+                    foreach ($item in $items) {
+                        try {
+                            Write-Log "Removing item: $($item.FullName)" "Debug" "Cleanup"
+                            Remove-Item $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
+                            $deletedCount++
+                            $cleared = $true
+                        } catch {
+                            Write-Log "Could not remove item: $($item.FullName) - $($_.Exception.Message)" "Debug" "Cleanup"
+                        }
                     }
+                } else {
+                    Write-Log "Recycle Bin on drive $($drive.Root) is already empty" "Debug" "Cleanup"
                 }
             }
         }
+        
         if ($cleared) {
             Write-Log "Recycle Bin cleared manually on all drives. Deleted $deletedCount items/folders." "Info" "Cleanup"
             return $true
+        } elseif ($recycleBinFound) {
+            Write-Log "Recycle Bin is already empty or all items are in use." "Info" "Cleanup"
+            return $true  # Consider this a success since the goal is achieved
         } else {
-            Write-Log "No Recycle Bin folders found to clear." "Warning" "Cleanup"
-            return $false
+            Write-Log "No accessible Recycle Bin folders found." "Info" "Cleanup"
+            return $true  # Consider this a success since there's nothing to clean
         }
     } catch {
         Write-Log "Failed to clear Recycle Bin: $($_.Exception.Message)" "Error" "Cleanup"
