@@ -2251,6 +2251,199 @@ function Install-KeePassXC {
 }
 #endregion
 
+#region Google Drive for Desktop Installation
+function Install-GoogleDriveForDesktop {
+    Write-Log "Starting Google Drive for Desktop installation..." "Info" "GoogleDrive"
+    
+    try {
+        # Check if Google Drive for Desktop is already installed
+        $googleDriveInstalled = $false
+        $detectionMethod = ""
+        
+        Write-Log "Checking for existing Google Drive for Desktop installation..." "Debug" "GoogleDrive"
+        
+        # Check if Google Drive is installed in Program Files
+        $googleDrivePaths = @(
+            "${env:ProgramFiles}\Google\Drive File Stream\GoogleDriveFS.exe",
+            "${env:ProgramFiles(x86)}\Google\Drive File Stream\GoogleDriveFS.exe",
+            "${env:ProgramFiles}\Google\Drive\GoogleDriveFS.exe",
+            "${env:ProgramFiles(x86)}\Google\Drive\GoogleDriveFS.exe"
+        )
+        
+        foreach ($path in $googleDrivePaths) {
+            Write-Log "Checking Program Files path: $path" "Debug" "GoogleDrive"
+            if (Test-Path $path) {
+                $googleDriveInstalled = $true
+                $detectionMethod = "Program Files"
+                Write-Log "Google Drive for Desktop is already installed in Program Files. Skipping installation." "Info" "GoogleDrive"
+                break
+            }
+        }
+        
+        # Check if Google Drive is installed in AppData
+        if (-not $googleDriveInstalled) {
+            $googleDriveAppDataPaths = @(
+                "${env:LOCALAPPDATA}\Google\Drive File Stream\GoogleDriveFS.exe",
+                "${env:LOCALAPPDATA}\Google\Drive\GoogleDriveFS.exe"
+            )
+            
+            foreach ($path in $googleDriveAppDataPaths) {
+                Write-Log "Checking AppData path: $path" "Debug" "GoogleDrive"
+                if (Test-Path $path) {
+                    $googleDriveInstalled = $true
+                    $detectionMethod = "AppData"
+                    Write-Log "Google Drive for Desktop is already installed in AppData. Skipping installation." "Info" "GoogleDrive"
+                    break
+                }
+            }
+        }
+        
+        # Check Windows Registry for Google Drive installation
+        if (-not $googleDriveInstalled) {
+            try {
+                Write-Log "Checking Windows Registry for Google Drive..." "Debug" "GoogleDrive"
+                $registryPaths = @(
+                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                )
+                
+                foreach ($regPath in $registryPaths) {
+                    $installedApps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue | Where-Object {
+                        $_.DisplayName -like "*Google Drive*" -or $_.DisplayName -like "*Drive File Stream*"
+                    }
+                    
+                    if ($installedApps) {
+                        $googleDriveInstalled = $true
+                        $detectionMethod = "Registry"
+                        Write-Log "Google Drive for Desktop is already installed (found in registry). Skipping installation." "Info" "GoogleDrive"
+                        break
+                    }
+                }
+            } catch {
+                Write-Log "Registry check failed, continuing with other checks..." "Debug" "GoogleDrive"
+            }
+        }
+        
+        # Check for Google Drive in Start Menu
+        if (-not $googleDriveInstalled) {
+            Write-Log "Checking Start Menu for Google Drive..." "Debug" "GoogleDrive"
+            $startMenuPaths = @(
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\Google Drive.lnk",
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\Drive File Stream.lnk"
+            )
+            
+            foreach ($startMenuPath in $startMenuPaths) {
+                Write-Log "Checking Start Menu path: $startMenuPath" "Debug" "GoogleDrive"
+                if (Test-Path $startMenuPath) {
+                    $googleDriveInstalled = $true
+                    $detectionMethod = "Start Menu"
+                    Write-Log "Google Drive for Desktop is already installed (found in Start Menu). Skipping installation." "Info" "GoogleDrive"
+                    break
+                }
+            }
+        }
+        
+        # Check for Google Drive in All Users Start Menu
+        if (-not $googleDriveInstalled) {
+            Write-Log "Checking All Users Start Menu for Google Drive..." "Debug" "GoogleDrive"
+            $allUsersStartMenuPaths = @(
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\Google Drive.lnk",
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\Drive File Stream.lnk"
+            )
+            
+            foreach ($startMenuPath in $allUsersStartMenuPaths) {
+                Write-Log "Checking All Users Start Menu path: $startMenuPath" "Debug" "GoogleDrive"
+                if (Test-Path $startMenuPath) {
+                    $googleDriveInstalled = $true
+                    $detectionMethod = "All Users Start Menu"
+                    Write-Log "Google Drive for Desktop is already installed (found in All Users Start Menu). Skipping installation." "Info" "GoogleDrive"
+                    break
+                }
+            }
+        }
+        
+        # Check if Google Drive process is running (indicates it's installed)
+        if (-not $googleDriveInstalled) {
+            try {
+                Write-Log "Checking for running Google Drive processes..." "Debug" "GoogleDrive"
+                $googleDriveProcesses = @("GoogleDriveFS", "GoogleDrive", "DriveFileStream")
+                foreach ($processName in $googleDriveProcesses) {
+                    $process = Get-Process -Name $processName -ErrorAction SilentlyContinue
+                    if ($process) {
+                        $googleDriveInstalled = $true
+                        $detectionMethod = "Running Process ($processName)"
+                        Write-Log "Google Drive for Desktop is already installed and running ($processName). Skipping installation." "Info" "GoogleDrive"
+                        break
+                    }
+                }
+            } catch {
+                Write-Log "Process check failed, continuing with other checks..." "Debug" "GoogleDrive"
+            }
+        }
+        
+        if ($googleDriveInstalled) {
+            Write-Log "Google Drive for Desktop installation check completed - already installed (detected via: $detectionMethod)." "Info" "GoogleDrive"
+            return $true
+        }
+        
+        Write-Log "Google Drive for Desktop not found in any expected location. Proceeding with installation..." "Info" "GoogleDrive"
+        
+        # Download and install Google Drive for Desktop
+        Write-Log "Downloading Google Drive for Desktop installer..." "Info" "GoogleDrive"
+        $tempDir = [System.IO.Path]::GetTempPath()
+        $installerPath = Join-Path $tempDir "GoogleDriveSetup.exe"
+        
+        try {
+            # Download the installer from Google's official URL
+            $downloadUrl = "https://dl.google.com/drive-file-stream/GoogleDriveSetup.exe"
+            Write-Log "Downloading from: $downloadUrl" "Info" "GoogleDrive"
+            
+            Invoke-WebRequest -Uri $downloadUrl -OutFile $installerPath
+            
+            Write-Log "Installing Google Drive for Desktop..." "Info" "GoogleDrive"
+            Write-Log "Note: This installation may require user interaction for Google account setup." "Info" "GoogleDrive"
+            
+            # Run the installer silently
+            $process = Start-Process -FilePath $installerPath -ArgumentList "/S" -Wait -PassThru
+            
+            if ($process.ExitCode -eq 0) {
+                Write-Log "Google Drive for Desktop installed successfully!" "Info" "GoogleDrive"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                Write-Log "Google Drive for Desktop installation completed. You may need to sign in with your Google account." "Info" "GoogleDrive"
+                return $true
+            } else {
+                Write-Log "Google Drive for Desktop installation failed with exit code: $($process.ExitCode)" "Error" "GoogleDrive"
+                
+                # Clean up the installer
+                if (Test-Path $installerPath) {
+                    Remove-Item $installerPath -Force
+                }
+                
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to download or install Google Drive for Desktop: $($_.Exception.Message)" "Error" "GoogleDrive"
+            
+            # Clean up the installer if it exists
+            if (Test-Path $installerPath) {
+                Remove-Item $installerPath -Force
+            }
+            
+            return $false
+        }
+    } catch {
+        Write-Log "Failed to install Google Drive for Desktop: $($_.Exception.Message)" "Error" "GoogleDrive"
+        return $false
+    }
+}
+#endregion
+
 #region Windows Terminal Settings Symlink
 function Create-WindowsTerminalSettingsSymlink {
     Write-Log "Creating symlink for Windows Terminal settings.json..." "Info" "WindowsTerminalSymlink"
@@ -2340,7 +2533,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 25
+    $totalSteps = 26
     
     # Step 1: Install winget
     Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
@@ -2582,8 +2775,17 @@ function Main {
         Show-PCManagerAlternativeInfo
     }
     
-    # Step 25: Notify user to manually install DaVinci Resolve
-    Write-Log ("Step 25/{0}: DaVinci Resolve manual installation required..." -f ($totalSteps+1)) "Info" "Main"
+    # Step 25: Install Google Drive for Desktop
+    Write-Log ("Step 25/{0}: Installing Google Drive for Desktop..." -f $totalSteps) "Info" "Main"
+    if (Install-GoogleDriveForDesktop) {
+        $successCount++
+        Write-Log "✓ Google Drive for Desktop installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ Google Drive for Desktop installation failed" "Error" "Main"
+    }
+    
+    # Step 26: Notify user to manually install DaVinci Resolve
+    Write-Log ("Step 26/{0}: DaVinci Resolve manual installation required..." -f ($totalSteps+1)) "Info" "Main"
     Notify-DaVinciResolveManualInstall
     
     # Summary
@@ -2613,12 +2815,13 @@ function Main {
         Write-Log "18. Look for UniKey in your Start menu or desktop" "Info" "Main"
         Write-Log "19. Run 'everything' to launch Everything search" "Info" "Main"
         Write-Log "20. Run 'keepassxc' to launch KeePassXC password manager" "Info" "Main"
-        Write-Log "21. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
-        Write-Log "21. Run 'winget --help' to see available commands" "Info" "Main"
-        Write-Log "22. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "23. Visit https://winget.run/ for winget packages" "Info" "Main"
-        Write-Log "24. Visit https://scoop.sh/ for more information" "Info" "Main"
-        Write-Log "25. Notify user to manually install DaVinci Resolve" "Info" "Main"
+        Write-Log "21. Look for Google Drive for Desktop in your system tray or Start menu" "Info" "Main"
+        Write-Log "22. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
+        Write-Log "23. Run 'winget --help' to see available commands" "Info" "Main"
+        Write-Log "24. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "25. Visit https://winget.run/ for winget packages" "Info" "Main"
+        Write-Log "26. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "27. Notify user to manually install DaVinci Resolve" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
