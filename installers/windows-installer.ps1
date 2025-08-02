@@ -1367,31 +1367,22 @@ function Install-GoogleQuickShare {
             }
         }
         
-        # Check for QuickShare in WindowsApps (Microsoft Store app)
+        # Check if Google Drive process is running (indicates it's installed)
         if (-not $quickShareInstalled) {
-            Write-Log "Checking WindowsApps for QuickShare..." "Debug" "QuickShare"
-            $windowsAppsPaths = @(
-                "${env:ProgramFiles}\WindowsApps\Google.QuickShare*",
-                "${env:ProgramFiles(x86)}\WindowsApps\Google.QuickShare*"
-            )
-            
-            foreach ($basePath in $windowsAppsPaths) {
-                try {
-                    $quickShareDirs = Get-ChildItem -Path $basePath -Directory -ErrorAction SilentlyContinue
-                    foreach ($dir in $quickShareDirs) {
-                        $quickShareExe = Join-Path $dir.FullName "QuickShare.exe"
-                        Write-Log "Checking WindowsApps path: $quickShareExe" "Debug" "QuickShare"
-                        if (Test-Path $quickShareExe) {
-                            $quickShareInstalled = $true
-                            $detectionMethod = "WindowsApps"
-                            Write-Log "Google QuickShare is already installed (found in WindowsApps). Skipping installation." "Info" "QuickShare"
-                            break
-                        }
+            try {
+                Write-Log "Checking for running Google Drive processes..." "Debug" "QuickShare"
+                $googleDriveProcesses = @("GoogleDriveFS", "GoogleDrive", "DriveFileStream")
+                foreach ($processName in $googleDriveProcesses) {
+                    $process = Get-Process -Name $processName -ErrorAction SilentlyContinue
+                    if ($process) {
+                        $quickShareInstalled = $true
+                        $detectionMethod = "Running Process ($processName)"
+                        Write-Log "Google QuickShare is already installed and running ($processName). Skipping installation." "Info" "QuickShare"
+                        break
                     }
-                    if ($quickShareInstalled) { break }
-                } catch {
-                    Write-Log "WindowsApps check failed for path: $basePath" "Debug" "QuickShare"
                 }
+            } catch {
+                Write-Log "Process check failed, continuing with other checks..." "Debug" "QuickShare"
             }
         }
         
@@ -2526,6 +2517,210 @@ function Notify-DaVinciResolveManualInstall {
 }
 #endregion
 
+#region WhatsApp Installation
+function Install-WhatsApp {
+    Write-Log "Starting WhatsApp installation..." "Info" "WhatsApp"
+    
+    try {
+        # Check if WhatsApp is already installed
+        $whatsappInstalled = $false
+        $detectionMethod = ""
+        
+        Write-Log "Checking for existing WhatsApp installation..." "Debug" "WhatsApp"
+        
+        # Check if WhatsApp is installed via winget (msstore)
+        try {
+            Write-Log "Checking winget for WhatsApp (msstore ID 9nksqgp7f2nh)..." "Debug" "WhatsApp"
+            $wingetList = winget list "9nksqgp7f2nh" 2>$null
+            if ($wingetList -match "WhatsApp" -or $wingetList -match "9nksqgp7f2nh") {
+                $whatsappInstalled = $true
+                $detectionMethod = "winget (msstore)"
+                Write-Log "WhatsApp is already installed via winget (msstore). Skipping installation." "Info" "WhatsApp"
+            }
+        } catch {
+            Write-Log "winget check failed, continuing with other checks..." "Debug" "WhatsApp"
+        }
+        
+        # Check if WhatsApp is installed in WindowsApps (Microsoft Store app)
+        if (-not $whatsappInstalled) {
+            Write-Log "Checking WindowsApps for WhatsApp..." "Debug" "WhatsApp"
+            $windowsAppsPaths = @(
+                "${env:ProgramFiles}\WindowsApps\5319275A.WhatsAppDesktop*",
+                "${env:ProgramFiles(x86)}\WindowsApps\5319275A.WhatsAppDesktop*"
+            )
+            
+            foreach ($basePath in $windowsAppsPaths) {
+                try {
+                    $whatsappDirs = Get-ChildItem -Path $basePath -Directory -ErrorAction SilentlyContinue | Sort-Object Name -Descending
+                    foreach ($dir in $whatsappDirs) {
+                        $whatsappExe = Join-Path $dir.FullName "WhatsApp.exe"
+                        Write-Log "Checking WindowsApps path: $whatsappExe" "Debug" "WhatsApp"
+                        if (Test-Path $whatsappExe) {
+                            $whatsappInstalled = $true
+                            $detectionMethod = "WindowsApps"
+                            Write-Log "WhatsApp is already installed (found in WindowsApps). Skipping installation." "Info" "WhatsApp"
+                            break
+                        }
+                    }
+                    if ($whatsappInstalled) { break }
+                } catch {
+                    Write-Log "WindowsApps check failed for path: $basePath" "Debug" "WhatsApp"
+                }
+            }
+        }
+        
+        # Check if WhatsApp is installed via Get-AppxPackage
+        if (-not $whatsappInstalled) {
+            try {
+                Write-Log "Checking AppxPackage for WhatsApp..." "Debug" "WhatsApp"
+                $appxPackage = Get-AppxPackage -Name "5319275A.WhatsAppDesktop" -AllUsers -ErrorAction SilentlyContinue
+                if ($appxPackage) {
+                    $whatsappInstalled = $true
+                    $detectionMethod = "AppxPackage"
+                    Write-Log "WhatsApp is already installed (found via AppxPackage). Skipping installation." "Info" "WhatsApp"
+                }
+            } catch {
+                Write-Log "AppxPackage check failed, continuing with other checks..." "Debug" "WhatsApp"
+            }
+        }
+        
+        # Check Windows Registry for WhatsApp installation
+        if (-not $whatsappInstalled) {
+            try {
+                Write-Log "Checking Windows Registry for WhatsApp..." "Debug" "WhatsApp"
+                $registryPaths = @(
+                    "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKLM:\SOFTWARE\WOW6432Node\Microsoft\Windows\CurrentVersion\Uninstall\*",
+                    "HKCU:\SOFTWARE\Microsoft\Windows\CurrentVersion\Uninstall\*"
+                )
+                
+                foreach ($regPath in $registryPaths) {
+                    $installedApps = Get-ItemProperty $regPath -ErrorAction SilentlyContinue | Where-Object {
+                        $_.DisplayName -like "*WhatsApp*" -or $_.DisplayName -like "*WhatsApp Desktop*"
+                    }
+                    
+                    if ($installedApps) {
+                        $whatsappInstalled = $true
+                        $detectionMethod = "Registry"
+                        Write-Log "WhatsApp is already installed (found in registry). Skipping installation." "Info" "WhatsApp"
+                        break
+                    }
+                }
+            } catch {
+                Write-Log "Registry check failed, continuing with other checks..." "Debug" "WhatsApp"
+            }
+        }
+        
+        # Check for WhatsApp in Start Menu
+        if (-not $whatsappInstalled) {
+            Write-Log "Checking Start Menu for WhatsApp..." "Debug" "WhatsApp"
+            $startMenuPaths = @(
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\WhatsApp.lnk",
+                "${env:APPDATA}\Microsoft\Windows\Start Menu\Programs\WhatsApp Desktop.lnk"
+            )
+            
+            foreach ($startMenuPath in $startMenuPaths) {
+                Write-Log "Checking Start Menu path: $startMenuPath" "Debug" "WhatsApp"
+                if (Test-Path $startMenuPath) {
+                    $whatsappInstalled = $true
+                    $detectionMethod = "Start Menu"
+                    Write-Log "WhatsApp is already installed (found in Start Menu). Skipping installation." "Info" "WhatsApp"
+                    break
+                }
+            }
+        }
+        
+        # Check for WhatsApp in All Users Start Menu
+        if (-not $whatsappInstalled) {
+            Write-Log "Checking All Users Start Menu for WhatsApp..." "Debug" "WhatsApp"
+            $allUsersStartMenuPaths = @(
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\WhatsApp.lnk",
+                "${env:ProgramData}\Microsoft\Windows\Start Menu\Programs\WhatsApp Desktop.lnk"
+            )
+            
+            foreach ($startMenuPath in $allUsersStartMenuPaths) {
+                Write-Log "Checking All Users Start Menu path: $startMenuPath" "Debug" "WhatsApp"
+                if (Test-Path $startMenuPath) {
+                    $whatsappInstalled = $true
+                    $detectionMethod = "All Users Start Menu"
+                    Write-Log "WhatsApp is already installed (found in All Users Start Menu). Skipping installation." "Info" "WhatsApp"
+                    break
+                }
+            }
+        }
+        
+        if ($whatsappInstalled) {
+            Write-Log "WhatsApp installation check completed - already installed (detected via: $detectionMethod)." "Info" "WhatsApp"
+            return $true
+        }
+        
+        Write-Log "WhatsApp not found in any expected location. Proceeding with installation..." "Info" "WhatsApp"
+        
+        # Install WhatsApp using winget (msstore)
+        Write-Log "Installing WhatsApp using winget (msstore)..." "Info" "WhatsApp"
+        Write-Log "Note: This may take a few minutes and require user interaction..." "Info" "WhatsApp"
+
+        try {
+            Write-Log "Using winget command: winget install --id=9nksqgp7f2nh --source=msstore" "Debug" "WhatsApp"
+            $process = Start-Process -FilePath "winget" -ArgumentList 'install --id=9nksqgp7f2nh --source=msstore --accept-source-agreements --accept-package-agreements --verbose-logs' -Wait -PassThru -NoNewWindow
+            $exitCode = $process.ExitCode
+            Write-Log "winget install process exited with code: $exitCode" "Debug" "WhatsApp"
+
+            if ($exitCode -eq 0) {
+                Write-Log "WhatsApp install command completed successfully (exit code 0)." "Info" "WhatsApp"
+                # Wait a few seconds for registration
+                Start-Sleep -Seconds 5
+                # Fallback: check with Get-AppxPackage
+                $appxPackage = Get-AppxPackage -Name "5319275A.WhatsAppDesktop" -AllUsers -ErrorAction SilentlyContinue
+                if ($appxPackage) {
+                    Write-Log "WhatsApp detected via Get-AppxPackage after install." "Info" "WhatsApp"
+                    return $true
+                } else {
+                    Write-Log "WhatsApp not detected via Get-AppxPackage, but install command succeeded. Please verify manually." "Warning" "WhatsApp"
+                    return $true
+                }
+            } else {
+                Write-Log "WhatsApp install command failed with exit code $exitCode." "Error" "WhatsApp"
+                return $false
+            }
+        } catch {
+            Write-Log "Failed to install WhatsApp via winget (msstore): $($_.Exception.Message)" "Error" "WhatsApp"
+            return $false
+        }
+        
+    } catch {
+        Write-Log "Failed to install WhatsApp: $($_.Exception.Message)" "Error" "WhatsApp"
+        return $false
+    }
+}
+#endregion
+
+#region WhatsApp Alternative Installation Information
+function Show-WhatsAppAlternativeInfo {
+    Write-Log "=== WhatsApp Alternative Installation Methods ===" "Info" "WhatsApp"
+    Write-Log "If WhatsApp installation via winget (msstore) fails, try these alternatives:" "Info" "WhatsApp"
+    Write-Log " " "Info" "WhatsApp"
+    Write-Log "🔧 Alternative Installation Methods:" "Info" "WhatsApp"
+    Write-Log "1. Microsoft Store (Recommended):" "Info" "WhatsApp"
+    Write-Log "   - Open Microsoft Store" "Info" "WhatsApp"
+    Write-Log "   - Search for 'WhatsApp' or use the code 9nksqgp7f2nh" "Info" "WhatsApp"
+    Write-Log "   - Click 'Get' or 'Install'" "Info" "WhatsApp"
+    Write-Log "   - Direct link: https://apps.microsoft.com/detail/9nksqgp7f2nh?hl=en-US&gl=US" "Info" "WhatsApp"
+    Write-Log " " "Info" "WhatsApp"
+    Write-Log "2. Using winget manually:" "Info" "WhatsApp"
+    Write-Log "   winget install --id=9nksqgp7f2nh --source=msstore" "Info" "WhatsApp"
+    Write-Log " " "Info" "WhatsApp"
+    Write-Log "3. Direct download (if available):" "Info" "WhatsApp"
+    Write-Log "   Visit: https://apps.microsoft.com/detail/9nksqgp7f2nh?hl=en-US&gl=US" "Info" "WhatsApp"
+    Write-Log "   Click 'Get' to open Microsoft Store" "Info" "WhatsApp"
+    Write-Log " " "Info" "WhatsApp"
+    Write-Log "💡 Note: WhatsApp Desktop is a Microsoft Store app and requires a Microsoft account." "Info" "WhatsApp"
+    Write-Log "The app provides desktop access to WhatsApp messaging service." "Info" "WhatsApp"
+    Write-Log "=== End of WhatsApp Alternative Installation Methods ===" "Info" "WhatsApp"
+    return $true
+}
+#endregion
+
 #region Main Execution
 function Main {
     Write-Log "=== Windows Dotfiles Installer Started ===" "Info" "Main"
@@ -2533,7 +2728,7 @@ function Main {
     Write-Log "Running as Administrator: $([Security.Principal.WindowsIdentity]::GetCurrent().Groups -contains 'S-1-5-32-544')" "Debug" "Main"
     
     $successCount = 0
-    $totalSteps = 26
+    $totalSteps = 27
     
     # Step 1: Install winget
     Write-Log ("Step 1/{0}: Installing winget (Windows Package Manager)..." -f $totalSteps) "Info" "Main"
@@ -2784,8 +2979,19 @@ function Main {
         Write-Log "✗ Google Drive for Desktop installation failed" "Error" "Main"
     }
     
-    # Step 26: Notify user to manually install DaVinci Resolve
-    Write-Log ("Step 26/{0}: DaVinci Resolve manual installation required..." -f ($totalSteps+1)) "Info" "Main"
+    # Step 26: Install WhatsApp
+    Write-Log ("Step 26/{0}: Installing WhatsApp..." -f $totalSteps) "Info" "Main"
+    if (Install-WhatsApp) {
+        $successCount++
+        Write-Log "✓ WhatsApp installation completed" "Info" "Main"
+    } else {
+        Write-Log "✗ WhatsApp installation failed" "Error" "Main"
+        Write-Log "Showing alternative installation methods..." "Info" "Main"
+        Show-WhatsAppAlternativeInfo
+    }
+    
+    # Step 27: Notify user to manually install DaVinci Resolve
+    Write-Log ("Step 27/{0}: DaVinci Resolve manual installation required..." -f ($totalSteps+1)) "Info" "Main"
     Notify-DaVinciResolveManualInstall
     
     # Summary
@@ -2816,12 +3022,13 @@ function Main {
         Write-Log "19. Run 'everything' to launch Everything search" "Info" "Main"
         Write-Log "20. Run 'keepassxc' to launch KeePassXC password manager" "Info" "Main"
         Write-Log "21. Look for Google Drive for Desktop in your system tray or Start menu" "Info" "Main"
-        Write-Log "22. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
-        Write-Log "23. Run 'winget --help' to see available commands" "Info" "Main"
-        Write-Log "24. Run 'scoop help' to see available commands" "Info" "Main"
-        Write-Log "25. Visit https://winget.run/ for winget packages" "Info" "Main"
-        Write-Log "26. Visit https://scoop.sh/ for more information" "Info" "Main"
-        Write-Log "27. Notify user to manually install DaVinci Resolve" "Info" "Main"
+        Write-Log "22. Look for WhatsApp in your Start menu or desktop" "Info" "Main"
+        Write-Log "23. Install Pure Battery Add-on manually using the guide above" "Info" "Main"
+        Write-Log "24. Run 'winget --help' to see available commands" "Info" "Main"
+        Write-Log "25. Run 'scoop help' to see available commands" "Info" "Main"
+        Write-Log "26. Visit https://winget.run/ for winget packages" "Info" "Main"
+        Write-Log "27. Visit https://scoop.sh/ for more information" "Info" "Main"
+        Write-Log "28. Notify user to manually install DaVinci Resolve" "Info" "Main"
     } else {
         Write-Log "⚠️  Some installations failed. Please review the logs above." "Warning" "Main"
         Write-Log "You may need to run the script again or manually install the failed components." "Warning" "Main"
