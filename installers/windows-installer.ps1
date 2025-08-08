@@ -351,13 +351,6 @@ function Main {
         Write-Log "⚠️  Some installations failed. Check logs above." "Warning" "Main"
     }
     
-    # Create My-Data folder
-    $myDataPath = Join-Path ([Environment]::GetFolderPath('MyDocuments')) 'My-Data'
-    if (-not (Test-Path $myDataPath)) {
-        New-Item -ItemType Directory -Path $myDataPath -Force | Out-Null
-        Write-Log "Created 'My-Data' folder" "Info" "Main"
-    }
-    
     Write-Log "=== Installer Completed ===" "Info" "Main"
 }
 
