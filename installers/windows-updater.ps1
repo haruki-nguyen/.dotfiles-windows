@@ -6,345 +6,171 @@
     Windows dotfiles updater and system cleanup script
     
 .DESCRIPTION
-    This script updates installed packages and cleans up system clutter,
-    behaving like Nix package manager with clean package management.
-    
-.PARAMETER LogLevel
-    Logging level: Debug, Info, Warning, Error. Default: Info
-    
-.PARAMETER UpdateOnly
-    Only update packages, skip cleanup operations
-    
-.PARAMETER CleanupOnly
-    Only perform cleanup operations, skip package updates
-    
-.PARAMETER ForceCleanup
-    Force aggressive cleanup operations (use with caution)
-    
-.EXAMPLE
-    .\windows-updater.ps1 -LogLevel Debug
-    .\windows-updater.ps1 -UpdateOnly
-    .\windows-updater.ps1 -CleanupOnly -ForceCleanup
+    Simplified updater that updates packages and cleans system clutter
 #>
 
 param(
-    [ValidateSet("Debug", "Info", "Warning", "Error")]
-    [string]$LogLevel = "Info",
     [switch]$UpdateOnly,
     [switch]$CleanupOnly,
     [switch]$ForceCleanup
 )
 
-#region Logging Functions
+#region Simple Logging
 function Write-Log {
-    param(
-        [Parameter(Mandatory = $true)]
-        [string]$Message,
-        
-        [Parameter(Mandatory = $false)]
-        [ValidateSet("Debug", "Info", "Warning", "Error")]
-        [string]$Level = "Info",
-        
-        [Parameter(Mandatory = $false)]
-        [string]$Component = "Main"
-    )
+    param([string]$Message, [string]$Level = "Info")
     
-    # Handle empty or null messages
-    if ([string]::IsNullOrEmpty($Message)) {
-        $Message = " "
+    $timestamp = Get-Date -Format "HH:mm:ss"
+    $color = switch ($Level) {
+        "Error" { "Red" }
+        "Warning" { "Yellow" }
+        "Info" { "Green" }
+        default { "White" }
     }
     
-    $timestamp = Get-Date -Format "yyyy-MM-dd HH:mm:ss"
-    $logMessage = "[$timestamp] [$Level] [$Component] $Message"
-    
-    # Define log levels (higher number = more verbose)
-    $logLevels = @{
-        "Debug" = 4
-        "Info" = 3
-        "Warning" = 2
-        "Error" = 1
-    }
-    
-    $currentLogLevel = if ($null -ne $LogLevel -and $logLevels.ContainsKey($LogLevel)) { $logLevels[$LogLevel] } else { 3 }
-    $messageLogLevel = if ($null -ne $Level -and $logLevels.ContainsKey($Level)) { $logLevels[$Level] } else { 3 }
-    
-    if ($messageLogLevel -le $currentLogLevel) {
-        switch ($Level) {
-            "Error" { Write-Host $logMessage -ForegroundColor Red }
-            "Warning" { Write-Host $logMessage -ForegroundColor Yellow }
-            "Info" { Write-Host $logMessage -ForegroundColor Green }
-            "Debug" { Write-Host $logMessage -ForegroundColor Gray }
-        }
-    }
+    Write-Host "[$timestamp] $Message" -ForegroundColor $color
 }
 
-function Test-Command {
-    param([string]$Command)
-    try {
-        Get-Command $Command -ErrorAction Stop | Out-Null
-        return $true
-    } catch {
-        return $false
-    }
+function Test-Command { param([string]$Command)
+    try { Get-Command $Command -ErrorAction Stop | Out-Null; return $true } catch { return $false }
 }
 #endregion
 
-#region Package Management Functions
+#region Package Management
 function Update-ScoopPackages {
-    Write-Log "Updating Scoop packages..." "Info" "ScoopUpdate"
+    Write-Log "Updating Scoop packages..." "Info"
     
     try {
         if (-not (Test-Command "scoop")) {
-            Write-Log "Scoop is not installed. Skipping Scoop updates." "Warning" "ScoopUpdate"
+            Write-Log "Scoop not installed. Skipping." "Warning"
             return $false
         }
         
-        # Update Scoop itself
-        Write-Log "Updating Scoop..." "Info" "ScoopUpdate"
+        # Check for blocking apps
+        $blockingApps = @("cursor", "code", "obsidian", "notion", "discord", "vlc")
+        $runningApps = $blockingApps | Where-Object { Get-Process -Name $_ -ErrorAction SilentlyContinue }
+        
+        if ($runningApps) {
+            Write-Log "⚠️  Running apps that may block updates: $($runningApps -join ', ')" "Warning"
+            $response = Read-Host "Press Enter to continue, or 'q' to quit"
+            if ($response -eq 'q') { return $false }
+        }
+        
         scoop update
-        
-        # Update all installed packages
-        Write-Log "Updating all Scoop packages..." "Info" "ScoopUpdate"
         scoop update *
-        
-        # Clean up old versions
-        Write-Log "Cleaning up old Scoop package versions..." "Info" "ScoopUpdate"
         scoop cleanup *
         
-        Write-Log "Scoop packages updated successfully!" "Info" "ScoopUpdate"
+        # Fix Python pip if needed
+        $pythonPath = "$env:USERPROFILE\scoop\apps\python\current\Scripts\pip.exe"
+        if (Test-Path $pythonPath) {
+            try { python -m pip --version | Out-Null } catch { python -m ensurepip --upgrade }
+        }
+        
+        Write-Log "Scoop packages updated successfully!" "Info"
         return $true
     } catch {
-        Write-Log "Failed to update Scoop packages: $($_.Exception.Message)" "Error" "ScoopUpdate"
+        Write-Log "Failed to update Scoop packages: $($_.Exception.Message)" "Error"
         return $false
     }
 }
 
 function Update-WingetPackages {
-    Write-Log "Updating winget packages..." "Info" "WingetUpdate"
+    Write-Log "Updating winget packages..." "Info"
     
     try {
         if (-not (Test-Command "winget")) {
-            Write-Log "winget is not installed. Skipping winget updates." "Warning" "WingetUpdate"
+            Write-Log "winget not installed. Skipping." "Warning"
             return $false
         }
         
-        # Update all packages
-        Write-Log "Updating all winget packages..." "Info" "WingetUpdate"
         winget upgrade --all --accept-source-agreements --accept-package-agreements
-        
-        Write-Log "winget packages updated successfully!" "Info" "WingetUpdate"
+        Write-Log "winget packages updated successfully!" "Info"
         return $true
     } catch {
-        Write-Log "Failed to update winget packages: $($_.Exception.Message)" "Error" "WingetUpdate"
+        Write-Log "Failed to update winget packages: $($_.Exception.Message)" "Error"
         return $false
     }
 }
 #endregion
 
-#region System Cleanup Functions
-function Clear-TemporaryFiles {
-    Write-Log "Clearing temporary files..." "Info" "Cleanup"
+#region System Cleanup
+function Clear-SystemFiles {
+    Write-Log "Cleaning system files..." "Info"
     
     try {
-        $tempPaths = @(
-            $env:TEMP,
-            $env:TMP,
-            [System.IO.Path]::GetTempPath(),
-            "$env:LOCALAPPDATA\Temp",
-            "$env:WINDIR\Temp"
-        )
+        $cleaned = 0
         
-        $totalCleaned = 0
-        
-        foreach ($tempPath in $tempPaths) {
-            if (Test-Path $tempPath) {
-                Write-Log "Cleaning temporary files in: $tempPath" "Debug" "Cleanup"
-                
-                try {
-                    $files = Get-ChildItem -Path $tempPath -Recurse -Force -ErrorAction SilentlyContinue | Where-Object {
-                        $_.LastWriteTime -lt (Get-Date).AddDays(-7) -and -not $_.PSIsContainer
-                    }
-                    
-                    foreach ($file in $files) {
-                        try {
-                            Remove-Item $file.FullName -Force -ErrorAction SilentlyContinue
-                            $totalCleaned++
-                        } catch {
-                            # Continue with other files
-                        }
-                    }
-                } catch {
-                    Write-Log "Error accessing $tempPath : $($_.Exception.Message)" "Debug" "Cleanup"
+        # Temporary files
+        $tempPaths = @($env:TEMP, $env:TMP, [System.IO.Path]::GetTempPath(), "$env:LOCALAPPDATA\Temp")
+        foreach ($path in $tempPaths) {
+            if (Test-Path $path) {
+                $files = Get-ChildItem -Path $path -Recurse -Force -ErrorAction SilentlyContinue | 
+                    Where-Object { $_.LastWriteTime -lt (Get-Date).AddDays(-7) -and -not $_.PSIsContainer }
+                foreach ($file in $files) {
+                    try { Remove-Item $file.FullName -Force -ErrorAction SilentlyContinue; $cleaned++ } catch { }
                 }
             }
         }
         
-        Write-Log "Cleaned $totalCleaned temporary files" "Info" "Cleanup"
-        return $true
-    } catch {
-        Write-Log "Failed to clear temporary files: $($_.Exception.Message)" "Error" "Cleanup"
-        return $false
-    }
-}
-
-function Clear-WindowsUpdateCache {
-    Write-Log "Clearing Windows Update cache..." "Info" "Cleanup"
-    
-    try {
-        # Stop Windows Update service
-        Write-Log "Stopping Windows Update service..." "Debug" "Cleanup"
-        Stop-Service -Name "wuauserv" -Force -ErrorAction SilentlyContinue
-        
-        # Clear Windows Update cache
-        $updateCachePath = "$env:SystemRoot\SoftwareDistribution\Download"
-        if (Test-Path $updateCachePath) {
-            Write-Log "Removing Windows Update cache..." "Debug" "Cleanup"
-            Remove-Item -Path $updateCachePath -Recurse -Force -ErrorAction SilentlyContinue
-        }
-        
-        # Restart Windows Update service
-        Write-Log "Restarting Windows Update service..." "Debug" "Cleanup"
-        Start-Service -Name "wuauserv" -ErrorAction SilentlyContinue
-        
-        Write-Log "Windows Update cache cleared successfully!" "Info" "Cleanup"
-        return $true
-    } catch {
-        Write-Log "Failed to clear Windows Update cache: $($_.Exception.Message)" "Error" "Cleanup"
-        return $false
-    }
-}
-
-function Clear-DNS {
-    Write-Log "Clearing DNS cache..." "Info" "Cleanup"
-    
-    try {
-        ipconfig /flushdns
-        Write-Log "DNS cache cleared successfully!" "Info" "Cleanup"
-        return $true
-    } catch {
-        Write-Log "Failed to clear DNS cache: $($_.Exception.Message)" "Error" "Cleanup"
-        return $false
-    }
-}
-
-function Clear-RecycleBin {
-    Write-Log "Clearing Recycle Bin..." "Info" "Cleanup"
-    try {
-        # Try using PowerShell's built-in method first
-        try {
-            $builtinCommand = Get-Command "Clear-RecycleBin" -CommandType Cmdlet -ErrorAction SilentlyContinue
-            if ($builtinCommand) {
-                & $builtinCommand -Force -ErrorAction Stop
-                Write-Log "Recycle Bin cleared successfully using built-in method!" "Info" "Cleanup"
-                return $true
-            }
-        } catch {
-            Write-Log "Built-in Clear-RecycleBin failed, trying manual method..." "Debug" "Cleanup"
-        }
-        
-        # Fallback to manual method
-        Write-Log "Using manual Recycle Bin cleanup method..." "Debug" "Cleanup"
-        $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Free -gt 0 }
-        $cleared = $false
-        $deletedCount = 0
-        $recycleBinFound = $false
-        
-        foreach ($drive in $drives) {
-            $recyclePath = Join-Path $drive.Root '$Recycle.Bin'
-            Write-Log "Checking for Recycle Bin at: $recyclePath" "Debug" "Cleanup"
-            
-            if (Test-Path $recyclePath) {
-                $recycleBinFound = $true
-                Write-Log "Found Recycle Bin at: $recyclePath" "Debug" "Cleanup"
-                
-                # Remove all subfolders (each user's SID) and files
-                $items = Get-ChildItem -Path $recyclePath -Force -ErrorAction SilentlyContinue
-                
-                if ($items) {
-                    Write-Log "Found $($items.Count) items in Recycle Bin on drive $($drive.Root)" "Debug" "Cleanup"
-                    foreach ($item in $items) {
-                        try {
-                            Write-Log "Removing item: $($item.FullName)" "Debug" "Cleanup"
-                            Remove-Item $item.FullName -Recurse -Force -ErrorAction SilentlyContinue
-                            $deletedCount++
-                            $cleared = $true
-                        } catch {
-                            Write-Log "Could not remove item: $($item.FullName) - $($_.Exception.Message)" "Debug" "Cleanup"
-                        }
-                    }
-                } else {
-                    Write-Log "Recycle Bin on drive $($drive.Root) is already empty" "Debug" "Cleanup"
-                }
-            }
-        }
-        
-        if ($cleared) {
-            Write-Log "Recycle Bin cleared manually on all drives. Deleted $deletedCount items/folders." "Info" "Cleanup"
-            return $true
-        } elseif ($recycleBinFound) {
-            Write-Log "Recycle Bin is already empty or all items are in use." "Info" "Cleanup"
-            return $true  # Consider this a success since the goal is achieved
-        } else {
-            Write-Log "No accessible Recycle Bin folders found." "Info" "Cleanup"
-            return $true  # Consider this a success since there's nothing to clean
-        }
-    } catch {
-        Write-Log "Failed to clear Recycle Bin: $($_.Exception.Message)" "Error" "Cleanup"
-        return $false
-    }
-}
-
-function Optimize-DiskSpace {
-    Write-Log "Running disk space optimization..." "Info" "Cleanup"
-    
-    try {
-        # Run DISM cleanup
-        Write-Log "Running DISM cleanup..." "Debug" "Cleanup"
-        dism.exe /online /cleanup-image /startcomponentcleanup /resetbase
-        
-        # Run SFC scan
-        Write-Log "Running SFC scan..." "Debug" "Cleanup"
-        sfc /scannow
-        
-        Write-Log "Disk space optimization completed!" "Info" "Cleanup"
-        return $true
-    } catch {
-        Write-Log "Failed to optimize disk space: $($_.Exception.Message)" "Error" "Cleanup"
-        return $false
-    }
-}
-
-function Clear-BrowserCache {
-    Write-Log "Clearing browser caches..." "Info" "Cleanup"
-    
-    try {
+        # Browser caches
         $browserPaths = @(
             "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Cache",
-            "$env:LOCALAPPDATA\Google\Chrome\User Data\Default\Code Cache",
             "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Cache",
-            "$env:LOCALAPPDATA\Microsoft\Edge\User Data\Default\Code Cache",
-            "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\cache2",
-            "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\startupCache"
+            "$env:LOCALAPPDATA\Mozilla\Firefox\Profiles\*\cache2"
         )
+        foreach ($path in $browserPaths) {
+            if (Test-Path $path) {
+                try { Remove-Item -Path $path -Recurse -Force -ErrorAction SilentlyContinue; $cleaned++ } catch { }
+            }
+        }
         
-        $totalCleaned = 0
-        
-        foreach ($browserPath in $browserPaths) {
-            if (Test-Path $browserPath) {
-                Write-Log "Clearing browser cache: $browserPath" "Debug" "Cleanup"
-                try {
-                    Remove-Item -Path $browserPath -Recurse -Force -ErrorAction SilentlyContinue
-                    $totalCleaned++
-                } catch {
-                    # Continue with other paths
+        # Recycle Bin
+        try {
+            Clear-RecycleBin -Force -ErrorAction SilentlyContinue
+            $cleaned++
+        } catch {
+            # Manual cleanup if built-in fails
+            $drives = Get-PSDrive -PSProvider FileSystem | Where-Object { $_.Free -gt 0 }
+            foreach ($drive in $drives) {
+                $recyclePath = Join-Path $drive.Root '$Recycle.Bin'
+                if (Test-Path $recyclePath) {
+                    $items = Get-ChildItem -Path $recyclePath -Force -ErrorAction SilentlyContinue
+                    foreach ($item in $items) {
+                        try { Remove-Item $item.FullName -Recurse -Force -ErrorAction SilentlyContinue; $cleaned++ } catch { }
+                    }
                 }
             }
         }
         
-        Write-Log "Cleared $totalCleaned browser cache locations" "Info" "Cleanup"
+        # DNS cache
+        ipconfig /flushdns | Out-Null
+        
+        Write-Log "Cleaned $cleaned items" "Info"
         return $true
     } catch {
-        Write-Log "Failed to clear browser caches: $($_.Exception.Message)" "Error" "Cleanup"
+        Write-Log "Failed to clean system files: $($_.Exception.Message)" "Error"
+        return $false
+    }
+}
+
+function Clear-WindowsCache {
+    Write-Log "Clearing Windows cache..." "Info"
+    
+    try {
+        # Windows Update cache
+        Stop-Service -Name "wuauserv" -Force -ErrorAction SilentlyContinue
+        $updateCachePath = "$env:SystemRoot\SoftwareDistribution\Download"
+        if (Test-Path $updateCachePath) {
+            Remove-Item -Path $updateCachePath -Recurse -Force -ErrorAction SilentlyContinue
+        }
+        Start-Service -Name "wuauserv" -ErrorAction SilentlyContinue
+        
+        # DISM cleanup
+        dism.exe /online /cleanup-image /startcomponentcleanup /resetbase | Out-Null
+        
+        Write-Log "Windows cache cleared successfully!" "Info"
+        return $true
+    } catch {
+        Write-Log "Failed to clear Windows cache: $($_.Exception.Message)" "Error"
         return $false
     }
 }
@@ -352,122 +178,47 @@ function Clear-BrowserCache {
 
 #region Main Execution
 function Main {
-    Write-Log "=== Windows Dotfiles Updater and Cleanup Started ===" "Info" "Main"
-    Write-Log "Log Level: $LogLevel" "Debug" "Main"
-    Write-Log "Update Only: $UpdateOnly" "Debug" "Main"
-    Write-Log "Cleanup Only: $CleanupOnly" "Debug" "Main"
-    Write-Log "Force Cleanup: $ForceCleanup" "Debug" "Main"
+    Write-Log "=== Windows Dotfiles Updater Started ===" "Info"
     
     $successCount = 0
     $totalSteps = 0
     
     # Package Updates
     if (-not $CleanupOnly) {
-        Write-Log "=== Starting Package Updates ===" "Info" "Main"
+        Write-Log "=== Package Updates ===" "Info"
         
-        # Update Scoop packages
         $totalSteps++
-        Write-Log ("Step {0}: Updating Scoop packages..." -f $totalSteps) "Info" "Main"
-        if (Update-ScoopPackages) {
-            $successCount++
-            Write-Log "✓ Scoop packages updated" "Info" "Main"
-        } else {
-            Write-Log "✗ Scoop packages update failed" "Error" "Main"
-        }
+        if (Update-ScoopPackages) { $successCount++ }
         
-        # Update winget packages
         $totalSteps++
-        Write-Log ("Step {0}: Updating winget packages..." -f $totalSteps) "Info" "Main"
-        if (Update-WingetPackages) {
-            $successCount++
-            Write-Log "✓ winget packages updated" "Info" "Main"
-        } else {
-            Write-Log "✗ winget packages update failed" "Error" "Main"
-        }
+        if (Update-WingetPackages) { $successCount++ }
     }
     
     # System Cleanup
     if (-not $UpdateOnly) {
-        Write-Log "=== Starting System Cleanup ===" "Info" "Main"
+        Write-Log "=== System Cleanup ===" "Info"
         
-        # Clear temporary files
         $totalSteps++
-        Write-Log ("Step {0}: Clearing temporary files..." -f $totalSteps) "Info" "Main"
-        if (Clear-TemporaryFiles) {
-            $successCount++
-            Write-Log "✓ Temporary files cleared" "Info" "Main"
-        } else {
-            Write-Log "✗ Temporary files cleanup failed" "Error" "Main"
-        }
+        if (Clear-SystemFiles) { $successCount++ }
         
-        # Clear DNS cache
-        $totalSteps++
-        Write-Log ("Step {0}: Clearing DNS cache..." -f $totalSteps) "Info" "Main"
-        if (Clear-DNS) {
-            $successCount++
-            Write-Log "✓ DNS cache cleared" "Info" "Main"
-        } else {
-            Write-Log "✗ DNS cache cleanup failed" "Error" "Main"
-        }
-        
-        # Clear browser caches
-        $totalSteps++
-        Write-Log ("Step {0}: Clearing browser caches..." -f $totalSteps) "Info" "Main"
-        if (Clear-BrowserCache) {
-            $successCount++
-            Write-Log "✓ Browser caches cleared" "Info" "Main"
-        } else {
-            Write-Log "✗ Browser cache cleanup failed" "Error" "Main"
-        }
-        
-        # Clear Recycle Bin
-        $totalSteps++
-        Write-Log ("Step {0}: Clearing Recycle Bin..." -f $totalSteps) "Info" "Main"
-        if (Clear-RecycleBin) {
-            $successCount++
-            Write-Log "✓ Recycle Bin cleared" "Info" "Main"
-        } else {
-            Write-Log "✗ Recycle Bin cleanup failed" "Error" "Main"
-        }
-        
-        # Force cleanup operations (if requested)
         if ($ForceCleanup) {
-            Write-Log "=== Starting Force Cleanup Operations ===" "Info" "Main"
-            
-            # Clear Windows Update cache
             $totalSteps++
-            Write-Log ("Step {0}: Clearing Windows Update cache..." -f $totalSteps) "Info" "Main"
-            if (Clear-WindowsUpdateCache) {
-                $successCount++
-                Write-Log "✓ Windows Update cache cleared" "Info" "Main"
-            } else {
-                Write-Log "✗ Windows Update cache cleanup failed" "Error" "Main"
-            }
-            
-            # Optimize disk space
-            $totalSteps++
-            Write-Log ("Step {0}: Optimizing disk space..." -f $totalSteps) "Info" "Main"
-            if (Optimize-DiskSpace) {
-                $successCount++
-                Write-Log "✓ Disk space optimized" "Info" "Main"
-            } else {
-                Write-Log "✗ Disk space optimization failed" "Error" "Main"
-            }
+            if (Clear-WindowsCache) { $successCount++ }
         }
     }
     
     # Summary
-    Write-Log "=== Operation Summary ===" "Info" "Main"
-    Write-Log ("Completed: {0}/{1} steps successfully" -f $successCount, $totalSteps) "Info" "Main"
+    Write-Log "=== Summary ===" "Info"
+    Write-Log "Completed: $successCount/$totalSteps operations successfully" "Info"
     
     if ($successCount -eq $totalSteps) {
-        Write-Log "🎉 All operations completed successfully!" "Info" "Main"
+        Write-Log "🎉 All operations completed successfully!" "Info"
     } else {
-        Write-Log "⚠️  Some operations failed. Check the logs above for details." "Warning" "Main"
+        Write-Log "⚠️  Some operations failed. Check logs above." "Warning"
     }
     
-    Write-Log "=== Windows Dotfiles Updater and Cleanup Completed ===" "Info" "Main"
+    Write-Log "=== Updater Completed ===" "Info"
 }
 
-# Execute main function
+# Execute
 Main
