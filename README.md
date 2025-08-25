@@ -44,24 +44,22 @@ A comprehensive Windows development environment setup with automated PowerShell 
 
 ### 1. `windows-installer.ps1`
 
-A comprehensive installer script that sets up your complete Windows development environment.
+A streamlined installer script that sets up your complete Windows development environment using a configuration-based approach.
 
 **Features:**
 
-- Installs and configures Scoop package manager
+- Installs and configures Scoop package manager with extras and nonportable buckets
 - Installs winget (Windows Package Manager)
-- Installs essential development tools (Git, VSCode, Cursor AI)
+- Installs essential development tools (Git, VSCode, Cursor)
 - Installs productivity applications (Discord, Chrome, Notion, Obsidian)
-- Installs system utilities (PowerToys, Flowlauncher, ProtonVPN)
-- Installs media applications (VLC, Syncthing, DaVinci Resolve [manual step])
-- Installs communication tools (Zalo, Google QuickShare)
-- Installs system management tools (PC Manager, Windows Terminal)
-- Installs Vietnamese input method (UniKey)
-- Installs search utility (Everything)
+- Installs system utilities (PowerToys, Flowlauncher, Everything, KeePassXC)
+- Installs communication tools (WhatsApp, ProtonVPN)
+- Installs media applications (VLC, Syncthing)
+- Installs system management tools (PC Manager, Windows Terminal, Office 365)
+- Installs cloud tools (Docker Desktop, Google QuickShare, Google Drive)
 - Sets up GitHub SSH keys
-- Configures FlowLauncher settings
 - Creates symbolic links for dotfiles
-- Notifies user to manually install DaVinci Resolve (step 25)
+- Uses generic installer functions for maintainable code
 
 **Usage:**
 
@@ -123,11 +121,16 @@ A maintenance script for keeping your system and packages up to date, with compr
 
 The installer script installs (in order):
 
+### Package Managers
+
+- **winget**: Windows Package Manager (Microsoft)
+- **Scoop**: Command-line installer for Windows
+
 ### Development Tools
 
 - **Git**: Version control system
 - **VSCode**: Code editor
-- **Cursor AI Editor**: AI-powered code editor
+- **Cursor**: AI-powered code editor
 
 ### Productivity Applications
 
@@ -141,27 +144,27 @@ The installer script installs (in order):
 - **PowerToys**: Windows utilities and productivity tools
 - **Flowlauncher**: Application launcher (Alt+Space)
 - **Everything**: File search utility
+- **KeePassXC**: Password manager
 - **Windows Terminal**: Modern terminal application
 
 ### Communication & Media
 
 - **ProtonVPN**: VPN service
-- **Google QuickShare**: File sharing
-- **Zalo**: Vietnamese messaging app
+- **WhatsApp**: Messaging app
 - **VLC Media Player**: Media player
 - **Syncthing**: File synchronization
-- **DaVinci Resolve**: Professional video editor (**manual installation required**)
 
 ### System Management
 
 - **PC Manager**: Microsoft system optimization tool
 - **Pure Battery Add-on**: Battery management
-- **UniKey**: Vietnamese input method
+- **Office 365**: Microsoft Office suite
 
-### Package Managers
+### Cloud & File Sharing
 
-- **Scoop**: Command-line installer for Windows
-- **winget**: Windows Package Manager (Microsoft)
+- **Docker Desktop**: Container platform
+- **Google QuickShare**: File sharing
+- **Google Drive**: Cloud storage
 
 ## After Installation
 
@@ -187,13 +190,26 @@ Run the updater script regularly to keep your system clean and up to date:
 
 ```
 .dotfiles-windows/
+├── .config/                    # Configuration directories
+│   ├── FlowLauncher/          # FlowLauncher settings
+│   └── Windows-Terminal/      # Windows Terminal configuration
 ├── installers/
 │   ├── windows-installer.ps1  # Main installation script
-│   ├── windows-updater.ps1    # Maintenance and cleanup script
-│   └── README.md              # Detailed script documentation
-├── shared-dotfiles/           # Shared configuration files
+│   └── windows-updater.ps1    # Maintenance and cleanup script
+├── scripts/                    # Additional utility scripts
+├── shared-dotfiles/           # Git submodule with shared configs
+├── .gitconfig                 # Global Git configuration
+├── .gitmodules                # Git submodule definitions
 └── README.md                  # This file
 ```
+
+## Git Submodules
+
+This repository uses Git submodules to manage shared configuration files:
+
+- **shared-dotfiles**: Contains configuration files shared between Linux and Windows environments
+- To update: `git submodule update --remote`
+- To clone with submodules: `git clone --recursive <repository-url>`
 
 ## Troubleshooting
 
@@ -218,6 +234,10 @@ Run the updater script regularly to keep your system clean and up to date:
    - Try alternative installation: `winget install Microsoft.PowerToys`
    - Or download from: <https://github.com/microsoft/PowerToys/releases>
 
+5. **Scoop Bucket Issues:**
+   - If extras bucket fails: `scoop bucket add extras`
+   - If nonportable bucket fails: `scoop bucket add nonportable`
+
 ### Logging
 
 Both scripts include comprehensive logging. Use the `-LogLevel Debug` parameter for detailed information:
@@ -241,4 +261,4 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ---
 
-**Note:** Some applications (e.g., Microsoft Office, DaVinci Resolve) may require manual installation. The scripts provide guidance where automation is not possible.
+**Note:** Most applications are installed automatically. Some applications (e.g., Microsoft Office via winget) may require user interaction during installation. The scripts provide guidance where automation is not possible.
