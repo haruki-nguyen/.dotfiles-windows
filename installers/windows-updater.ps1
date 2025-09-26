@@ -24,8 +24,17 @@ $env:Path += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
 
 function Update-Winget {
     if (Get-Command winget -ErrorAction SilentlyContinue) {
-        Write-Host "Updating Winget apps..."
-        winget upgrade --all --accept-source-agreements --accept-package-agreements
+        Write-Host "Updating only Winget apps installed by the installer..."
+        $wingetApps = @(
+            "Microsoft.WindowsTerminal",
+            "9N3HDTNCF6Z8",   # Pure Battery Add-on
+            "9nksqgp7f2nh",   # WhatsApp
+            "Google.Drive"
+        )
+        foreach ($id in $wingetApps) {
+            Write-Host "Upgrading $id via winget..."
+            winget upgrade --id=$id --accept-source-agreements --accept-package-agreements
+        }
     } else {
         Write-Host "Winget not found, skipping."
     }
@@ -38,6 +47,14 @@ function Cleanup-System {
         if (Test-Path $p) { Remove-Item "$p\*" -Recurse -Force -ErrorAction SilentlyContinue }
     }
     try { Clear-RecycleBin -Force -ErrorAction SilentlyContinue } catch {}
+}
+
+# Check for .gitconfig in home directory and create symlink if missing
+$homeGitConfig = Join-Path $env:USERPROFILE ".gitconfig"
+$repoGitConfig = "C:\Users\nmdex\.dotfiles-windows\.gitconfig"
+if (-not (Test-Path $homeGitConfig)) {
+    Write-Host "Creating symbolic link for .gitconfig in home directory..."
+    New-Item -ItemType SymbolicLink -Path $homeGitConfig -Target $repoGitConfig -Force | Out-Null
 }
 
 Write-Host "=== Updater Started ==="
