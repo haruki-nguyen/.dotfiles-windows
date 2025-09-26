@@ -22,6 +22,7 @@ Before running the scripts, please note:
    - The installer script must be run as administrator to install ProtonVPN.
 3. **Manual Installation Required After Running Scripts:**
    - MS Office, Docker Desktop, PC Manager, and Google Drive Desktop should be installed manually after the script completes.
+   - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
 
 ## Scripts Overview
 
