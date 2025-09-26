@@ -11,58 +11,38 @@ A comprehensive Windows development environment setup with automated PowerShell 
 - **Maintenance Scripts**: Automated system cleanup and package updates
 - **Dotfiles Integration**: Symbolic links and configuration management
 
-## Prerequisites
 
-- Windows 10/11
-- PowerShell 5.1 or later
-- Administrator privileges
+## Prerequisites & Manual Steps
 
-## Quick Start
+Before running the scripts, please note:
 
-1. **Clone the repository:**
-
-   ```powershell
-   git clone https://github.com/yourusername/.dotfiles-windows.git
-   cd .dotfiles-windows
-   ```
-
-2. **Run the installer:**
-
-   ```powershell
-   # Open PowerShell as Administrator
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   .\installers\windows-installer.ps1
-   ```
-
-3. **For debug logging:**
-
-   ```powershell
-   .\installers\windows-installer.ps1 -LogLevel Debug
-   ```
+1. **Manual Installation Required Before Running Scripts:**
+   - Install Scoop, Git, and PowerShell manually.
+2. **Run as Administrator:**
+   - The installer script must be run as administrator to install ProtonVPN.
+3. **Manual Installation Required After Running Scripts:**
+   - MS Office, Docker Desktop, PC Manager, and Google Drive Desktop should be installed manually after the script completes.
 
 ## Scripts Overview
 
+
 ### 1. `windows-installer.ps1`
 
-A streamlined installer script that sets up your complete Windows development environment using a configuration-based approach.
+Automates the setup of your Windows development environment. Now uses improved configuration and installer functions for maintainability.
 
-**Features:**
-
-- Installs and configures Scoop package manager with extras and nonportable buckets
-- Installs winget (Windows Package Manager)
-- Installs essential development tools (Git, VSCode, Cursor)
-- Installs productivity applications (Discord, Chrome, Notion, Obsidian)
-- Installs system utilities (PowerToys, Flowlauncher, Everything, KeePassXC)
-- Installs communication tools (WhatsApp, ProtonVPN)
-- Installs media applications (VLC, Syncthing)
-- Installs system management tools (PC Manager, Windows Terminal, Office 365)
-- Installs cloud tools (Docker Desktop, Google QuickShare, Google Drive)
+**Key Features:**
+- Installs and configures Scoop buckets (extras, nonportable)
+- Installs winget (if not present)
+- Installs development tools: VSCode, Cursor
+- Installs productivity apps: Discord, Chrome, Notion, Obsidian
+- Installs system utilities: PowerToys, Flowlauncher, Everything, KeePassXC, Windows Terminal
+- Installs communication/media: WhatsApp, ProtonVPN (requires admin), VLC, Syncthing
+- Installs cloud/file sharing: Google QuickShare
 - Sets up GitHub SSH keys
 - Creates symbolic links for dotfiles
-- Uses generic installer functions for maintainable code
+- Comprehensive logging and error handling
 
 **Usage:**
-
 ```powershell
 # Run with default settings
 .\installers\windows-installer.ps1
@@ -76,20 +56,15 @@ A streamlined installer script that sets up your complete Windows development en
 
 ### 2. `windows-updater.ps1`
 
-A maintenance script for keeping your system and packages up to date, with comprehensive cleanup capabilities.
+Maintains and cleans your system, updates packages, and performs cleanup operations.
 
-**Features:**
-
-- Updates all package managers (Scoop, winget)
-- Cleans temporary files and caches
-- Clears browser caches
-- Clears DNS cache
-- Clears Recycle Bin
-- Optional force cleanup operations
-- Comprehensive logging system
+**Key Features:**
+- Updates Scoop and winget packages
+- Cleans temp files, browser caches, DNS cache, Recycle Bin
+- Optional force cleanup (Windows Update cache, disk optimization)
+- Logging system with adjustable verbosity
 
 **Usage:**
-
 ```powershell
 # Run full update and cleanup
 .\installers\windows-updater.ps1
@@ -100,7 +75,7 @@ A maintenance script for keeping your system and packages up to date, with compr
 # Cleanup only
 .\installers\windows-updater.ps1 -CleanupOnly
 
-# Force cleanup (includes Windows Update cache and disk optimization)
+# Force cleanup
 .\installers\windows-updater.ps1 -ForceCleanup
 
 # Run with debug logging
@@ -111,68 +86,61 @@ A maintenance script for keeping your system and packages up to date, with compr
 ```
 
 **Parameters:**
-
 - `-LogLevel`: Set logging level (Debug, Info, Warning, Error). Default: Info
-- `-UpdateOnly`: Only update packages, skip cleanup operations
-- `-CleanupOnly`: Only perform cleanup operations, skip package updates
-- `-ForceCleanup`: Enable aggressive cleanup operations (use with caution)
+- `-UpdateOnly`: Only update packages, skip cleanup
+- `-CleanupOnly`: Only cleanup, skip updates
+- `-ForceCleanup`: Aggressive cleanup (use with caution)
 
-## What Gets Installed
 
-The installer script installs (in order):
+## What Gets Installed Automatically
+
+The installer script sets up:
 
 ### Package Managers
-
-- **winget**: Windows Package Manager (Microsoft)
-- **Scoop**: Command-line installer for Windows
+- **winget** (if not present)
+- **Scoop** (must be installed manually before running script)
 
 ### Development Tools
-
-- **Git**: Version control system
-- **VSCode**: Code editor
-- **Cursor**: AI-powered code editor
+- **VSCode**
+- **Cursor**
 
 ### Productivity Applications
-
-- **Discord**: Communication platform
-- **Google Chrome**: Web browser
-- **Notion**: Note-taking and collaboration
-- **Obsidian**: Knowledge management
+- **Discord**
+- **Google Chrome**
+- **Notion**
+- **Obsidian**
 
 ### System Utilities
-
-- **PowerToys**: Windows utilities and productivity tools
-- **Flowlauncher**: Application launcher (Alt+Space)
-- **Everything**: File search utility
-- **KeePassXC**: Password manager
-- **Windows Terminal**: Modern terminal application
+- **PowerToys**
+- **Flowlauncher**
+- **Everything**
+- **KeePassXC**
+- **Windows Terminal**
 
 ### Communication & Media
-
-- **ProtonVPN**: VPN service
-- **WhatsApp**: Messaging app
-- **VLC Media Player**: Media player
-- **Syncthing**: File synchronization
-
-### System Management
-
-- **PC Manager**: Microsoft system optimization tool
-- **Pure Battery Add-on**: Battery management
-- **Office 365**: Microsoft Office suite
+- **ProtonVPN** (requires admin)
+- **WhatsApp**
+- **VLC Media Player**
+- **Syncthing**
 
 ### Cloud & File Sharing
+- **Google QuickShare**
 
-- **Docker Desktop**: Container platform
-- **Google QuickShare**: File sharing
-- **Google Drive**: Cloud storage
+### Manual Installation Required After Script
+- **MS Office**
+- **Docker Desktop**
+- **PC Manager**
+- **Google Drive Desktop**
+
 
 ## After Installation
 
 - Use `scoop install <package>` or `winget install <package>` for additional apps
-- Run `git --version`, `code`, `cursor`, `discord`, `chrome`, etc. to verify installations
+- Run `code`, `cursor`, `discord`, `chrome`, etc. to verify installations
 - Press `Alt+Space` for FlowLauncher
 - Check logs for any manual steps or errors
 - **DaVinci Resolve:** Follow the script's notification to download and install manually from [the official website](https://www.blackmagicdesign.com/products/davinciresolve)
+
 
 ## Maintenance
 
