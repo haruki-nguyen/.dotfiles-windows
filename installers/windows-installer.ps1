@@ -44,8 +44,7 @@ $env:Path += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
 # --- Winget apps
 $wingetApps = @(
     "Microsoft.WindowsTerminal",
-    "9N3HDTNCF6Z8",   # Pure Battery Add-on
-    "Google.Drive"
+    "9N3HDTNCF6Z8"   # Pure Battery Add-on
 )
 foreach ($id in $wingetApps) { Install-Winget $id }
 
@@ -60,5 +59,8 @@ if (Get-Command git -ErrorAction SilentlyContinue) {
         Write-Host "SSH key generated. Add it to GitHub."
     }
 }
+
+# --- WSL2 setup
+wsl --install -d Ubuntu-22.04
 
 Write-Host "=== Setup Completed ==="
