@@ -34,7 +34,7 @@ $scoopApps = @(
     "extras/googlechrome", "extras/obsidian",
     "extras/powertoys", "extras/flow-launcher",
     "nonportable/protonvpn-np",
-    "extras/vlc", "extras/everything", "extras/keepassxc"
+    "extras/everything", "extras/keepassxc"
 )
 foreach ($app in $scoopApps) { Install-ScoopApp $app }
 
@@ -45,7 +45,6 @@ $env:Path += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
 $wingetApps = @(
     "Microsoft.WindowsTerminal",
     "9N3HDTNCF6Z8",   # Pure Battery Add-on
-    "9nksqgp7f2nh",   # WhatsApp
     "Google.Drive"
 )
 foreach ($id in $wingetApps) { Install-Winget $id }
