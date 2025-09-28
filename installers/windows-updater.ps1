@@ -14,7 +14,8 @@ function Update-Scoop {
         scoop update
         scoop update *
         scoop cleanup *
-    } else {
+    }
+    else {
         Write-Host "Scoop not installed, skipping."
     }
 }
@@ -27,15 +28,14 @@ function Update-Winget {
         Write-Host "Updating only Winget apps installed by the installer..."
         $wingetApps = @(
             "Microsoft.WindowsTerminal",
-            "9N3HDTNCF6Z8",   # Pure Battery Add-on
-            "9nksqgp7f2nh",   # WhatsApp
-            "Google.Drive"
+            "9N3HDTNCF6Z8"   # Pure Battery Add-on
         )
         foreach ($id in $wingetApps) {
             Write-Host "Upgrading $id via winget..."
             winget upgrade --id=$id --accept-source-agreements --accept-package-agreements
         }
-    } else {
+    }
+    else {
         Write-Host "Winget not found, skipping."
     }
 }
