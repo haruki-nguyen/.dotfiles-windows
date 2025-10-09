@@ -80,7 +80,7 @@
   <smart_size_centre_threshold_percentage>30</smart_size_centre_threshold_percentage>
   <dont_let_centred_images_overflow_the_screen>true</dont_let_centred_images_overflow_the_screen>
   <show_taken_date_when_available>true</show_taken_date_when_available>
-  <switching_interval>Hours3</switching_interval>
+  <switching_interval>Days1</switching_interval>
   <use_no_draw_zones>false</use_no_draw_zones>
   <transition_increment>0.03</transition_increment>
   <transition_interval>40</transition_interval>
