@@ -147,7 +147,14 @@
   <watch_folders />
   <flickr_profiles />
   <smugmug_photo_sets />
-  <pixabay_photo_sets />
+  <pixabay_photo_sets>
+    <PixabayPhotoSet>
+      <SearchType>SearchTerms</SearchType>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <AdultMode>Strict</AdultMode>
+      <Enabled>true</Enabled>
+    </PixabayPhotoSet>
+  </pixabay_photo_sets>
   <lastfm_photo_sets />
   <dropbox_photo_sets />
   <rss_feeds />
@@ -156,7 +163,7 @@
   <unsplash_photo_sets>
     <UnsplashPhotoSet>
       <SearchType>SearchTerms</SearchType>
-      <SearchTerms>Nature</SearchTerms>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
       <SearchColour>Any</SearchColour>
       <FeaturedCollection>
         <PhotoCount>0</PhotoCount>
@@ -165,6 +172,27 @@
     </UnsplashPhotoSet>
   </unsplash_photo_sets>
   <onedrive_photo_sets />
-  <wallhaven_photo_sets />
-  <pexels_photo_sets />
+  <wallhaven_photo_sets>
+    <WallhavenSet>
+      <SortOrder>DateAdded</SortOrder>
+      <General>true</General>
+      <Anime>false</Anime>
+      <People>false</People>
+      <SFW>true</SFW>
+      <Sketchy>false</Sketchy>
+      <NSFW>false</NSFW>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <Enabled>true</Enabled>
+    </WallhavenSet>
+  </wallhaven_photo_sets>
+  <pexels_photo_sets>
+    <PexelsPhotoSet>
+      <SearchType>SearchTerms</SearchType>
+      <FeaturedCollection>
+        <PhotoCount>0</PhotoCount>
+      </FeaturedCollection>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <Enabled>true</Enabled>
+    </PexelsPhotoSet>
+  </pexels_photo_sets>
 </backgroundswitchersettings>
