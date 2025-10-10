@@ -33,7 +33,7 @@ $scoopApps = @(
     "git", "extras/vscode",
     "extras/googlechrome", "extras/obsidian",
     "extras/powertoys", "extras/flow-launcher",
-    "nonportable/protonvpn-np",
+    "nonportable/protonvpn-np", "main/syncthing",
     "extras/everything", "extras/keepassxc"
 )
 foreach ($app in $scoopApps) { Install-ScoopApp $app }
