@@ -28,6 +28,7 @@ Before running the scripts, please note:
       - VLC.
       - Google Drive Desktop.
       - [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/).
+      - Discord.
    - Game development: Unity will be install manually.
    - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
 
