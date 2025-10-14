@@ -29,7 +29,10 @@ Before running the scripts, please note:
       - Google Drive Desktop.
       - [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/).
       - Discord.
-   - Game development: Unity will be install manually.
+      - 1.1.1.1.
+   - Game development:
+      - Unity.
+      - .NET SDK (For using Unity with VSCode).
    - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
 
 ## Scripts Overview
