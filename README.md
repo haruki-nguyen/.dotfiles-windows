@@ -30,6 +30,7 @@ Before running the scripts, please note:
       - [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/).
       - Discord.
       - 1.1.1.1.
+      - Google Quick Share.
    - Game development:
       - Unity.
       - .NET SDK (For using Unity with VSCode).
