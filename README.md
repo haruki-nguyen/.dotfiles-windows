@@ -31,6 +31,8 @@ Before running the scripts, please note:
       - Discord.
       - 1.1.1.1.
       - Google Quick Share.
+      - [Wintoys](https://apps.microsoft.com/detail/9P8LTPGCBZXD?hl=en-us&gl=VN&ocid=pdpshare).
+      - [O&O ShutUp10++](https://www.oo-software.com/en/shutup10).
    - Game development:
       - Unity.
       - .NET SDK (For using Unity with VSCode).
