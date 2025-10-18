@@ -36,9 +36,12 @@ $scoopApps = @(
     "nonportable/protonvpn-np", "main/syncthing",
     "extras/everything", "extras/keepassxc",
     # For some software development
-    "main/python" 
+    "main/python", "main/nodejs"
 )
 foreach ($app in $scoopApps) { Install-ScoopApp $app }
+
+# --- NPM apps
+npm install -g @google/gemini-cli
 
 # --- Winget PATH fix
 $env:Path += ";$env:LOCALAPPDATA\Microsoft\WindowsApps"
