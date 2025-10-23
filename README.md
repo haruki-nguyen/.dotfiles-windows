@@ -11,7 +11,6 @@ A comprehensive Windows development environment setup with automated PowerShell 
 - **Maintenance Scripts**: Automated system cleanup and package updates
 - **Dotfiles Integration**: Symbolic links and configuration management
 
-
 ## Prerequisites & Manual Steps
 
 Before running the scripts, please note:
@@ -37,15 +36,16 @@ Before running the scripts, please note:
       - Unity.
       - .NET SDK (For using Unity with VSCode).
    - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
+4. Setting up [MCP for Unity](./docs/MCP-Unity.md).
 
 ## Scripts Overview
-
 
 ### 1. `windows-installer.ps1`
 
 Automates the setup of your Windows development environment. Now uses improved configuration and installer functions for maintainability.
 
 **Key Features:**
+
 - Installs and configures Scoop buckets (extras, nonportable)
 - Installs winget (if not present)
 - Installs development tools: VSCode, Cursor
@@ -58,6 +58,7 @@ Automates the setup of your Windows development environment. Now uses improved c
 - Comprehensive logging and error handling
 
 **Usage:**
+
 ```powershell
 # Run with default settings
 .\installers\windows-installer.ps1
@@ -74,12 +75,14 @@ Automates the setup of your Windows development environment. Now uses improved c
 Maintains and cleans your system, updates packages, and performs cleanup operations.
 
 **Key Features:**
+
 - Updates Scoop and winget packages
 - Cleans temp files, browser caches, DNS cache, Recycle Bin
 - Optional force cleanup (Windows Update cache, disk optimization)
 - Logging system with adjustable verbosity
 
 **Usage:**
+
 ```powershell
 # Run full update and cleanup
 .\installers\windows-updater.ps1
@@ -101,31 +104,35 @@ Maintains and cleans your system, updates packages, and performs cleanup operati
 ```
 
 **Parameters:**
+
 - `-LogLevel`: Set logging level (Debug, Info, Warning, Error). Default: Info
 - `-UpdateOnly`: Only update packages, skip cleanup
 - `-CleanupOnly`: Only cleanup, skip updates
 - `-ForceCleanup`: Aggressive cleanup (use with caution)
-
 
 ## What Gets Installed Automatically
 
 The installer script sets up:
 
 ### Package Managers
+
 - **winget** (if not present)
 - **Scoop** (must be installed manually before running script)
 
 ### Development Tools
+
 - **VSCode**
 - **Cursor**
 
 ### Productivity Applications
+
 - **Discord**
 - **Google Chrome**
 - **Notion**
 - **Obsidian**
 
 ### System Utilities
+
 - **PowerToys**
 - **Flowlauncher**
 - **Everything**
@@ -133,20 +140,22 @@ The installer script sets up:
 - **Windows Terminal**
 
 ### Communication & Media
+
 - **ProtonVPN** (requires admin)
 - **WhatsApp**
 - **VLC Media Player**
 - **Syncthing**
 
 ### Cloud & File Sharing
+
 - **Google QuickShare**
 
 ### Manual Installation Required After Script
+
 - **MS Office**
 - **Docker Desktop**
 - **PC Manager**
 - **Google Drive Desktop**
-
 
 ## After Installation
 
@@ -155,7 +164,6 @@ The installer script sets up:
 - Press `Alt+Space` for FlowLauncher
 - Check logs for any manual steps or errors
 - **DaVinci Resolve:** Follow the script's notification to download and install manually from [the official website](https://www.blackmagicdesign.com/products/davinciresolve)
-
 
 ## Maintenance
 

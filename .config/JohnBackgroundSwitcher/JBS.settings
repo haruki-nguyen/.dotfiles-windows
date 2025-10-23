@@ -143,7 +143,13 @@
   <lastfm_access_token />
   <programs_to_stop_switching_for />
   <watch_folders_to_ignore />
-  <picture_lists />
+  <picture_lists>
+    <PicturesList Name="Robots and Farmers" Enabled="true">
+      <pictures>
+        <picture position="scale" Info="" Name="" Identifier="">C:\Users\nmdex\OneDrive\Máy tính\Lockscreen\robots-and-farmers.jpg</picture>
+      </pictures>
+    </PicturesList>
+  </picture_lists>
   <watch_folders />
   <flickr_profiles />
   <smugmug_photo_sets />
