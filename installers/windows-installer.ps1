@@ -35,8 +35,10 @@ $scoopApps = @(
     "extras/powertoys", "extras/flow-launcher",
     "nonportable/protonvpn-np", "main/syncthing",
     "extras/everything", "extras/keepassxc",
+    # MCP for Unity Setup
+    "main/python", 
     # For some software development
-    "main/python", "main/nodejs"
+    "main/nodejs"
 )
 foreach ($app in $scoopApps) { Install-ScoopApp $app }
 
