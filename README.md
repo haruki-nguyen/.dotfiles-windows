@@ -36,6 +36,7 @@ Before running the scripts, please note:
    - Game development:
       - Unity.
       - .NET SDK (For using Unity with VSCode).
+      - Claude Desktop (For using MCP for Unity).
    - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
 4. Setting up [MCP for Unity](./docs/MCP-Unity.md).
 
@@ -180,7 +181,7 @@ Run the updater script regularly to keep your system clean and up to date:
 
 ## Repository Structure
 
-```
+```txt
 .dotfiles-windows/
 ├── .config/                    # Configuration directories
 │   ├── FlowLauncher/          # FlowLauncher settings
