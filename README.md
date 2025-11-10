@@ -1,257 +1,115 @@
 # Haruki Nguyen's Windows Dotfiles
 
-A comprehensive Windows development environment setup with automated PowerShell scripts for installation and maintenance.
+Scripts and dotfiles to bootstrap and maintain a Windows development environment.
 
-## Features
+## Quick Start
 
-- **Automated Installation**: Single script installs all essential development tools and productivity apps
-- **Package Management**: Uses Scoop and winget for reliable package management
-- **Idempotent Operations**: Skips already installed tools and handles errors gracefully
-- **Comprehensive Logging**: Detailed progress tracking and error reporting
-- **Maintenance Scripts**: Automated system cleanup and package updates
-- **Dotfiles Integration**: Symbolic links and configuration management
+1. Clone with submodules:  
 
-## Prerequisites & Manual Steps
+   ```bash
+   git clone --recursive <repo-url>
+   ````
 
-Before running the scripts, please note:
+2. Open PowerShell in the repo folder.
+3. Run the installer (admin only if prompted):
 
-1. **Manual Installation Required Before Running Scripts:**
-   - Install Scoop, Git, and PowerShell manually.
-2. **Run as Administrator:**
-   - The installer script must be run as administrator to install ProtonVPN.
-3. **Manual Installation Required After Running Scripts:**
-   - Install manually:
-      - MS Office.
-      - PC Manager.
-      - VLC.
-      - Google Drive Desktop.
-      - [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/).
-      - Discord.
-      - Zalo.
-      - 1.1.1.1.
-      - Google Quick Share.
-      - [Wintoys](https://apps.microsoft.com/detail/9P8LTPGCBZXD?hl=en-us&gl=VN&ocid=pdpshare).
-      - [O&O ShutUp10++](https://www.oo-software.com/en/shutup10).
-      - [Davinci Resolve](https://www.blackmagicdesign.com/products/davinciresolve).
-   - Game development:
-      - Unity.
-      - .NET SDK (For using Unity with VSCode).
-      - Claude Desktop (For using MCP for Unity).
-   - Unikey: put the executable file into the `Programs` folder in your disk, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
-4. Setting up [MCP for Unity](./docs/MCP-Unity.md).
+   ```ps1
+   .\installers\windows-installer.ps1 -GitHubEmail "<you@example.com>"
+   ```
 
-## Scripts Overview
+## Installer: `installers/windows-installer.ps1`
 
-### 1. `windows-installer.ps1`
+* Installs and configures package managers (Scoop, winget).
+* Installs development, productivity, and system apps.
+* Sets up GitHub SSH key (if email provided).
+* Creates symlinks for dotfiles.
+* Skips already-installed items and logs actions/errors.
 
-Automates the setup of your Windows development environment. Now uses improved configuration and installer functions for maintainability.
+Optional parameters:
 
-**Key Features:**
+* `-GitHubEmail "<email>"` — setup SSH key
+* `-LogLevel Debug|Info|Warning|Error` — default: Info
 
-- Installs and configures Scoop buckets (extras, nonportable)
-- Installs winget (if not present)
-- Installs development tools: VSCode, Cursor
-- Installs productivity apps: Discord, Chrome, Notion, Obsidian
-- Installs system utilities: PowerToys, Flowlauncher, Everything, KeePassXC, Windows Terminal
-- Installs communication/media: WhatsApp, ProtonVPN (requires admin), VLC, Syncthing
-- Installs cloud/file sharing: Google QuickShare
-- Sets up GitHub SSH keys
-- Creates symbolic links for dotfiles
-- Comprehensive logging and error handling
+## Updater / Maintenance: `installers/windows-updater.ps1`
 
-**Usage:**
+* Updates Scoop and winget packages.
+* Cleans temp files, caches, and Recycle Bin.
+* Optional deep cleanup with `-ForceCleanup`.
 
-```powershell
-# Run with default settings
-.\installers\windows-installer.ps1
+Usage examples:
 
-# Run with debug logging
-.\installers\windows-installer.ps1 -LogLevel Debug
-
-# Run with GitHub email for SSH key
-.\installers\windows-installer.ps1 -GitHubEmail "your.email@example.com"
-```
-
-### 2. `windows-updater.ps1`
-
-Maintains and cleans your system, updates packages, and performs cleanup operations.
-
-**Key Features:**
-
-- Updates Scoop and winget packages
-- Cleans temp files, browser caches, DNS cache, Recycle Bin
-- Optional force cleanup (Windows Update cache, disk optimization)
-- Logging system with adjustable verbosity
-
-**Usage:**
-
-```powershell
-# Run full update and cleanup
-.\installers\windows-updater.ps1
-
-# Update packages only
+```ps1
+.\installers\windows-updater.ps1          # full update + cleanup
 .\installers\windows-updater.ps1 -UpdateOnly
-
-# Cleanup only
 .\installers\windows-updater.ps1 -CleanupOnly
-
-# Force cleanup
-.\installers\windows-updater.ps1 -ForceCleanup
-
-# Run with debug logging
-.\installers\windows-updater.ps1 -LogLevel Debug
-
-# Combine options
-.\installers\windows-updater.ps1 -UpdateOnly -LogLevel Debug
 ```
 
-**Parameters:**
+## Pre-Install Recommendations
 
-- `-LogLevel`: Set logging level (Debug, Info, Warning, Error). Default: Info
-- `-UpdateOnly`: Only update packages, skip cleanup
-- `-CleanupOnly`: Only cleanup, skip updates
-- `-ForceCleanup`: Aggressive cleanup (use with caution)
+* Open PowerShell as normal user.
+* Optional: preinstall Git, Scoop, PowerShell 7+.
+* Set execution policy:
 
-## What Gets Installed Automatically
+  ```ps1
+  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
+  ```
 
-The installer script sets up:
+## Manual Post-Install Tasks
 
-### Package Managers
+* **Manual Installation After Scripts:**  
+  * **Applications:**  
+     MS Office, PC Manager, VLC, Google Drive Desktop, Discord, Zalo, 1.1.1.1, Google Quick Share  
+     [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/), [Wintoys](https://apps.microsoft.com/detail/9P8LTPGCBZXD?hl=en-us&gl=VN&ocid=pdpshare), [O&O ShutUp10++](https://www.oo-software.com/en/shutup10), [Davinci Resolve](https://www.blackmagicdesign.com/products/davinciresolve)  
+  * **Game development tools:**  
+     Unity, .NET SDK (for Unity + VSCode), Claude Desktop (for MCP for Unity)  
+  * **Unikey:**  
+     Copy the executable to a `Programs` folder, then create a Startup shortcut (`Win + R`, run `shell:startup`)  
 
-- **winget** (if not present)
-- **Scoop** (must be installed manually before running script)
+* **MCP for Unity setup:**  
+   See [docs/MCP-Unity.md](./docs/MCP-Unity.md) for instructions.
 
-### Development Tools
+## Installed Packages (automatic)
 
-- **VSCode**
-- **Cursor**
+* **Dev tools:** VS Code, Python, Node.js
+* **Productivity:** Chrome, Notion, Obsidian, Discord
+* **System utils:** PowerToys, FlowLauncher, Everything, KeePassXC, Windows Terminal
+* **Communication & media:** WhatsApp, ProtonVPN, VLC, Syncthing
+* **Cloud:** Google QuickShare
 
-### Productivity Applications
-
-- **Discord**
-- **Google Chrome**
-- **Notion**
-- **Obsidian**
-
-### System Utilities
-
-- **PowerToys**
-- **Flowlauncher**
-- **Everything**
-- **KeePassXC**
-- **Windows Terminal**
-
-### Communication & Media
-
-- **ProtonVPN** (requires admin)
-- **WhatsApp**
-- **VLC Media Player**
-- **Syncthing**
-
-### Cloud & File Sharing
-
-- **Google QuickShare**
-
-### Manual Installation Required After Script
-
-- **MS Office**
-- **Docker Desktop**
-- **PC Manager**
-- **Google Drive Desktop**
-
-## After Installation
-
-- Use `scoop install <package>` or `winget install <package>` for additional apps
-- Run `code`, `cursor`, `discord`, `chrome`, etc. to verify installations
-- Press `Alt+Space` for FlowLauncher
-- Check logs for any manual steps or errors
-- **DaVinci Resolve:** Follow the script's notification to download and install manually from [the official website](https://www.blackmagicdesign.com/products/davinciresolve)
-
-## Maintenance
-
-Run the updater script regularly to keep your system clean and up to date:
-
-```powershell
-# Weekly maintenance
-.\installers\windows-updater.ps1
-
-# Monthly deep cleanup
-.\installers\windows-updater.ps1 -ForceCleanup
-```
-
-## Repository Structure
-
-```txt
-.dotfiles-windows/
-├── .config/                    # Configuration directories
-│   ├── FlowLauncher/          # FlowLauncher settings
-│   └── Windows-Terminal/      # Windows Terminal configuration
-├── installers/
-│   ├── windows-installer.ps1  # Main installation script
-│   └── windows-updater.ps1    # Maintenance and cleanup script
-├── scripts/                    # Additional utility scripts
-├── shared-dotfiles/           # Git submodule with shared configs
-├── .gitconfig                 # Global Git configuration
-├── .gitmodules                # Git submodule definitions
-└── README.md                  # This file
-```
+Scripts log failures and guide manual installs.
 
 ## Git Submodules
 
-This repository uses Git submodules to manage shared configuration files:
+* `shared-dotfiles` contains configs shared across platforms.
+* Update submodules:
 
-- **shared-dotfiles**: Contains configuration files shared between Linux and Windows environments
-- To update: `git submodule update --remote`
-- To clone with submodules: `git clone --recursive <repository-url>`
+  ```bash
+  git submodule update --remote
+  ```
 
 ## Troubleshooting
 
-### Common Issues
+* Execution policy blocked → `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
+* Scoop errors → run installer as normal user
+* winget missing → install “App Installer” or update Windows
+* Manual install may be required for some packages
 
-1. **Execution Policy Error:**
+## Repo Layout
 
-   ```powershell
-   Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-   ```
-
-2. **Scoop Installation Fails:**
-   - Ensure PowerShell is running as Administrator
-   - Check internet connection
-   - Try running: `irm get.scoop.sh | iex`
-
-3. **winget Not Found:**
-   - Install from Microsoft Store: "App Installer"
-   - Or download from: <https://github.com/microsoft/winget-cli/releases>
-
-4. **PowerToys Installation Issues:**
-   - Try alternative installation: `winget install Microsoft.PowerToys`
-   - Or download from: <https://github.com/microsoft/PowerToys/releases>
-
-5. **Scoop Bucket Issues:**
-   - If extras bucket fails: `scoop bucket add extras`
-   - If nonportable bucket fails: `scoop bucket add nonportable`
-
-### Logging
-
-Both scripts include comprehensive logging. Use the `-LogLevel Debug` parameter for detailed information:
-
-```powershell
-.\installers\windows-installer.ps1 -LogLevel Debug
-.\installers\windows-updater.ps1 -LogLevel Debug
+```txt
+.dotfiles-windows/
+├── .config/           # Tool configs
+├── installers/        # Installer + updater
+├── scripts/           # Utilities
+├── shared-dotfiles/   # Submodule
+├── .gitconfig
+└── README.md
 ```
 
 ## Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Test thoroughly
-5. Submit a pull request
+Fork → branch → edit → test → pull request.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
----
-
-**Note:** Most applications are installed automatically. Some applications (e.g., Microsoft Office via winget) may require user interaction during installation. The scripts provide guidance where automation is not possible.
+MIT
