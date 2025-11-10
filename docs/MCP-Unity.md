@@ -12,7 +12,7 @@
   # macOS / Linux
   curl -LsSf https://astral.sh/uv/install.sh | sh
 
-  # Windows
+  # Windows (I should restart my device)
   winget install --id=astral-sh.uv -e
   ```
 

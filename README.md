@@ -22,12 +22,12 @@ Before running the scripts, please note:
 3. **Manual Installation Required After Running Scripts:**
    - Install manually:
       - MS Office.
-      - Docker Desktop.
       - PC Manager.
       - VLC.
       - Google Drive Desktop.
       - [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/).
       - Discord.
+      - Zalo.
       - 1.1.1.1.
       - Google Quick Share.
       - [Wintoys](https://apps.microsoft.com/detail/9P8LTPGCBZXD?hl=en-us&gl=VN&ocid=pdpshare).
@@ -37,7 +37,7 @@ Before running the scripts, please note:
       - Unity.
       - .NET SDK (For using Unity with VSCode).
       - Claude Desktop (For using MCP for Unity).
-   - Unikey: put the executable file into the `Programs` folder in `~`, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
+   - Unikey: put the executable file into the `Programs` folder in your disk, then create a shortcut to it in the Startup folder (Press `Win + R` and run `shell:startup`).
 4. Setting up [MCP for Unity](./docs/MCP-Unity.md).
 
 ## Scripts Overview

@@ -62,10 +62,10 @@
         "source": "Windows.Terminal.PowershellCore"
       },
       {
-        "guid": "{17bf3de4-5353-5709-bcf9-835bd952a95e}",
+        "guid": "{4ff56d04-d9cf-57ea-bae2-ad396374e7e3}",
         "hidden": false,
-        "name": "Ubuntu-22.04",
-        "source": "Windows.Terminal.Wsl"
+        "name": "Ubuntu 22.04.5 LTS",
+        "source": "CanonicalGroupLimited.Ubuntu22.04LTS_79rhkp1fndgsc"
       }
     ]
   },
