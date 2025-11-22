@@ -1,115 +1,206 @@
-# Haruki Nguyen's Windows Dotfiles
+# Windows Development Environment – Simplified Setup
 
-Scripts and dotfiles to bootstrap and maintain a Windows development environment.
+## 1. Purpose
 
-## Quick Start
+This repository stores your Windows dotfiles and configuration. Instead of running a full installer, you will:
 
-1. Clone with submodules:  
+* install required tools manually
+* set up your environment step-by-step
+* create clean, reliable automation scripts later
 
-   ```bash
-   git clone --recursive <repo-url>
-   ````
+---
 
-2. Open PowerShell in the repo folder.
-3. Run the installer (admin only if prompted):
+## 2. Quick Start
 
-   ```ps1
-   .\installers\windows-installer.ps1 -GitHubEmail "<you@example.com>"
-   ```
+### Clone the repository with submodules
 
-## Installer: `installers/windows-installer.ps1`
-
-* Installs and configures package managers (Scoop, winget).
-* Installs development, productivity, and system apps.
-* Sets up GitHub SSH key (if email provided).
-* Creates symlinks for dotfiles.
-* Skips already-installed items and logs actions/errors.
-
-Optional parameters:
-
-* `-GitHubEmail "<email>"` — setup SSH key
-* `-LogLevel Debug|Info|Warning|Error` — default: Info
-
-## Updater / Maintenance: `installers/windows-updater.ps1`
-
-* Updates Scoop and winget packages.
-* Cleans temp files, caches, and Recycle Bin.
-* Optional deep cleanup with `-ForceCleanup`.
-
-Usage examples:
-
-```ps1
-.\installers\windows-updater.ps1          # full update + cleanup
-.\installers\windows-updater.ps1 -UpdateOnly
-.\installers\windows-updater.ps1 -CleanupOnly
+```bash
+git clone --recursive <repo-url>
 ```
 
-## Pre-Install Recommendations
+### Prepare PowerShell
 
-* Open PowerShell as normal user.
-* Optional: preinstall Git, Scoop, PowerShell 7+.
-* Set execution policy:
+```ps1
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+```
 
-  ```ps1
-  Set-ExecutionPolicy -ExecutionPolicy RemoteSigned -Scope CurrentUser
-  ```
+---
 
-## Manual Post-Install Tasks
+## 3. Manual Setup Steps
 
-* **Manual Installation After Scripts:**  
-  * **Applications:**  
-     MS Office, PC Manager, VLC, Google Drive Desktop, Discord, Zalo, 1.1.1.1, Google Quick Share  
-     [John’s Background Switcher](https://johnsad.ventures/software/backgroundswitcher/), [Wintoys](https://apps.microsoft.com/detail/9P8LTPGCBZXD?hl=en-us&gl=VN&ocid=pdpshare), [O&O ShutUp10++](https://www.oo-software.com/en/shutup10), [Davinci Resolve](https://www.blackmagicdesign.com/products/davinciresolve)  
-  * **Game development tools:**  
-     Unity, .NET SDK (for Unity + VSCode), Claude Desktop (for MCP for Unity)  
-  * **Unikey:**  
-     Copy the executable to a `Programs` folder, then create a Startup shortcut (`Win + R`, run `shell:startup`)  
+These are the essential tools to install manually.
 
-* **MCP for Unity setup:**  
-   See [docs/MCP-Unity.md](./docs/MCP-Unity.md) for instructions.
+### 3.1 Install Scoop (recommended)
 
-## Installed Packages (automatic)
+```ps1
+iwr -useb get.scoop.sh | iex
+scoop bucket add main
+scoop bucket add extras
+scoop bucket add nonportable
+```
 
-* **Dev tools:** VS Code, Python, Node.js
-* **Productivity:** Chrome, Notion, Obsidian, Discord
-* **System utils:** PowerToys, FlowLauncher, Everything, KeePassXC, Windows Terminal
-* **Communication & media:** WhatsApp, ProtonVPN, VLC, Syncthing
-* **Cloud:** Google QuickShare
+### 3.2 Install Required Apps via Scoop
 
-Scripts log failures and guide manual installs.
+```ps1
+scoop install git
+scoop install extras/vscode
+scoop install extras/googlechrome
+scoop install extras/obsidian
+scoop install extras/powertoys
+scoop install extras/flow-launcher
+scoop install nonportable/protonvpn-np
+scoop install syncthing
+scoop install extras/everything
+scoop install extras/keepassxc
+scoop install python
+scoop install nodejs
+```
 
-## Git Submodules
+### 3.3 Install Apps via Winget
 
-* `shared-dotfiles` contains configs shared across platforms.
-* Update submodules:
+```ps1
+winget install Microsoft.WindowsTerminal -e --accept-source-agreements --accept-package-agreements
+winget install 9N3HDTNCF6Z8 -e --accept-source-agreements --accept-package-agreements
+```
 
-  ```bash
-  git submodule update --remote
-  ```
+### 3.4 Optional NPM Tools
 
-## Troubleshooting
+```ps1
+npm install -g @google/gemini-cli
+```
 
-* Execution policy blocked → `Set-ExecutionPolicy RemoteSigned -Scope CurrentUser`
-* Scoop errors → run installer as normal user
-* winget missing → install “App Installer” or update Windows
-* Manual install may be required for some packages
+### 3.5 WSL Setup (optional)
 
-## Repo Layout
+```ps1
+wsl --install -d Ubuntu-22.04
+```
+
+---
+
+## 4. GitHub SSH Setup (manual)
+
+```ps1
+mkdir "$env:USERPROFILE/.ssh" -Force
+ssh-keygen -t ed25519 -C "<your email>" -f "$env:USERPROFILE/.ssh/id_ed25519"
+```
+
+Add the public key to GitHub, then verify:
+
+```ps1
+ssh -T git@github.com
+```
+
+---
+
+## 5. Link Dotfiles Manually
+
+Example:
+
+```ps1
+# This command requires Administrator
+New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.gitconfig" -Target "$env:USERPROFILE/.dotfiles-windows/.gitconfig" -Force
+```
+
+Repeat for any additional config files.
+
+---
+
+## 6. Manual Post-Install Apps
+
+Install these from the Microsoft Store or their websites:
+
+* Office softwares
+* PC Manager
+* VLC
+* Google Drive Desktop
+* Discord
+* Zalo
+* 1.1.1.1 (Cloudflare WARP)
+* Google Quick Share
+* John’s Background Switcher
+* Wintoys
+* O&O ShutUp10++
+* DaVinci Resolve
+
+### Game Development Tools
+
+* Unity
+* .NET SDK
+* Claude Desktop (for MCP)
+
+### Unikey Setup
+
+Copy Unikey to a folder, then add to Startup:
+
+```txt
+Win + R → shell:startup
+```
+
+---
+
+## 7. Updating Your System Manually
+
+### Update Scoop
+
+```ps1
+scoop update
+scoop update *
+```
+
+### Update Winget
+
+```ps1
+winget upgrade --all --accept-source-agreements --accept-package-agreements
+```
+
+### Cleanup (manual)
+
+* Clear Recycle Bin
+* Clear Temp folder (`%temp%`)
+* Scoop cleanup:
+
+```ps1
+scoop cache rm *
+```
+
+---
+
+## 8. Git Submodules
+
+```bash
+git submodule update --remote
+```
+
+---
+
+## 9. Repo Layout
 
 ```txt
 .dotfiles-windows/
-├── .config/           # Tool configs
-├── installers/        # Installer + updater
-├── scripts/           # Utilities
+├── .config/           # Configs
+├── installers/        # (OLD / NOT USED)
+├── scripts/           # For future automation
 ├── shared-dotfiles/   # Submodule
 ├── .gitconfig
 └── README.md
 ```
 
-## Contributing
+---
 
-Fork → branch → edit → test → pull request.
+## 10. Future Automation (recommended)
 
-## License
+After your environment is stable, create simple scripts to automate:
+
+* installing Scoop + buckets
+* installing core apps
+* linking dotfiles
+* WSL setup
+* updates & cleanup
+
+Keep each script small and testable (no monolithic installer).
+
+---
+
+## 11. License
 
 MIT
