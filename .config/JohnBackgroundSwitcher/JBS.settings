@@ -92,7 +92,7 @@
   <calendar_font Name="Microsoft Sans Serif" Size="11" Style="Regular" Unit="Pixel" />
   <polaroid_font Name="Courier New" Size="11" Style="Regular" Unit="Pixel" />
   <postcard_font Name="Microsoft Sans Serif" Size="11" Style="Regular" Unit="Pixel" />
-  <set_logon_background>false</set_logon_background>
+  <set_logon_background>true</set_logon_background>
   <logon_background_jpg_compression>50</logon_background_jpg_compression>
   <logon_background_display_mode>overscale</logon_background_display_mode>
   <never_show_again_alternate_folder />
@@ -156,7 +156,7 @@
   <pixabay_photo_sets>
     <PixabayPhotoSet>
       <SearchType>SearchTerms</SearchType>
-      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Cityscape, Japan, Travel, Bike, Car, Motivation</SearchTerms>
       <AdultMode>Strict</AdultMode>
       <Enabled>true</Enabled>
     </PixabayPhotoSet>
@@ -169,7 +169,7 @@
   <unsplash_photo_sets>
     <UnsplashPhotoSet>
       <SearchType>SearchTerms</SearchType>
-      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Cityscape, Japan, Travel, Bike, Car, Motivation</SearchTerms>
       <SearchColour>Any</SearchColour>
       <FeaturedCollection>
         <PhotoCount>0</PhotoCount>
@@ -187,7 +187,7 @@
       <SFW>true</SFW>
       <Sketchy>false</Sketchy>
       <NSFW>false</NSFW>
-      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Cityscape, Japan, Travel, Bike, Car, Motivation</SearchTerms>
       <Enabled>true</Enabled>
     </WallhavenSet>
   </wallhaven_photo_sets>
@@ -197,7 +197,7 @@
       <FeaturedCollection>
         <PhotoCount>0</PhotoCount>
       </FeaturedCollection>
-      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Bright, Cityscape, Japan, Travel, Bike, Car, Motivation, Tech Desk, Apple Devices, Aspirational</SearchTerms>
+      <SearchTerms>Nature, Wildlife, Mountains, Ocean, Minimalist, Serene, Cityscape, Japan, Travel, Bike, Car, Motivation</SearchTerms>
       <Enabled>true</Enabled>
     </PexelsPhotoSet>
   </pexels_photo_sets>
