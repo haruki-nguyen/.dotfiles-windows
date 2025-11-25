@@ -110,7 +110,7 @@ Repeat for any additional config files.
 Install these from the Microsoft Store or their websites:
 
 * Office softwares
-* PC Manager
+* Wise Memory Optimizer
 * VLC
 * Google Drive Desktop
 * Discord
