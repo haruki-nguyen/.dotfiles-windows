@@ -121,6 +121,8 @@ Install these from the Microsoft Store or their websites:
 * Wintoys
 * O&O ShutUp10++
 * DaVinci Resolve
+* Iriun Webcam
+* SoundWire Server
 
 ### Game Development Tools
 
