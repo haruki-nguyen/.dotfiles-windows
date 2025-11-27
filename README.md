@@ -41,6 +41,8 @@ scoop bucket add nonportable
 
 ### 3.2 Install Required Apps via Scoop
 
+Put [SyncthingHidden.vbs](scripts\SyncthingHideen.vbs) inside `shell:startup` to make Syncthing start on startup without opening a window of terminal.
+
 ```ps1
 scoop install git
 scoop install extras/vscode
