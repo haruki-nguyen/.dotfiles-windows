@@ -56,6 +56,7 @@ scoop install extras/everything
 scoop install extras/keepassxc
 scoop install python
 scoop install nodejs
+scoop install gcc
 ```
 
 ### 3.3 Install Apps via Winget
