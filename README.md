@@ -78,6 +78,10 @@ npm install -g @google/gemini-cli
 wsl --install -d Ubuntu-22.04
 ```
 
+### 3.6 JetBrains Mono Font Setup for VSCode
+
+<https://www.jetbrains.com/lp/mono/>
+
 ---
 
 ## 4. GitHub SSH Setup (manual)
@@ -127,6 +131,7 @@ Install these from the Microsoft Store or their websites:
 * Iriun Webcam
 * SoundWire Server
 * GIMP
+* Spotify
 
 ### Game Development Tools
 
