@@ -126,6 +126,7 @@ Install these from the Microsoft Store or their websites:
 * DaVinci Resolve
 * Iriun Webcam
 * SoundWire Server
+* GIMP
 
 ### Game Development Tools
 
