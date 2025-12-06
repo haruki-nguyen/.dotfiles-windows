@@ -4,9 +4,9 @@
 
 This repository stores your Windows dotfiles and configuration. Instead of running a full installer, you will:
 
-* install required tools manually
-* set up your environment step-by-step
-* create clean, reliable automation scripts later
+- install required tools manually
+- set up your environment step-by-step
+- create clean, reliable automation scripts later
 
 ---
 
@@ -116,28 +116,29 @@ Repeat for any additional config files.
 
 Install these from the Microsoft Store or their websites:
 
-* Office softwares
-* Wise Memory Optimizer
-* VLC
-* Google Drive Desktop
-* Discord
-* Zalo
-* 1.1.1.1 (Cloudflare WARP)
-* Google Quick Share
-* John’s Background Switcher
-* Wintoys
-* O&O ShutUp10++
-* DaVinci Resolve
-* Iriun Webcam
-* SoundWire Server
-* GIMP
-* Spotify
+- Office softwares
+- Wise Memory Optimizer
+- VLC
+- Google Drive Desktop
+- Discord
+- Zalo
+- 1.1.1.1 (Cloudflare WARP)
+- Google Quick Share
+- John’s Background Switcher
+- Wintoys
+- O&O ShutUp10++
+- DaVinci Resolve
+- Iriun Webcam
+- SoundWire Server
+- GIMP
+- Spotify
+- Zotero, with Better BibTex plugin for automatically exportation.
 
 ### Game Development Tools
 
-* Unity
-* .NET SDK
-* Claude Desktop (for MCP)
+- Unity
+- .NET SDK
+- Claude Desktop (for MCP)
 
 ### Unikey Setup
 
@@ -166,9 +167,9 @@ winget upgrade --all --accept-source-agreements --accept-package-agreements
 
 ### Cleanup (manual)
 
-* Clear Recycle Bin
-* Clear Temp folder (`%temp%`)
-* Scoop cleanup:
+- Clear Recycle Bin
+- Clear Temp folder (`%temp%`)
+- Scoop cleanup:
 
 ```ps1
 scoop cache rm *
@@ -202,11 +203,11 @@ git submodule update --remote
 
 After your environment is stable, create simple scripts to automate:
 
-* installing Scoop + buckets
-* installing core apps
-* linking dotfiles
-* WSL setup
-* updates & cleanup
+- installing Scoop + buckets
+- installing core apps
+- linking dotfiles
+- WSL setup
+- updates & cleanup
 
 Keep each script small and testable (no monolithic installer).
 
