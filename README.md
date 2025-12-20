@@ -117,14 +117,12 @@ Repeat for any additional config files.
 Install these from the Microsoft Store or their websites:
 
 - Office softwares
-- Wise Memory Optimizer
 - VLC
 - Google Drive Desktop/Dropbox
 - Discord
 - Zalo
 - 1.1.1.1 (Cloudflare WARP)
 - Google Quick Share
-- John’s Background Switcher
 - Wintoys
 - O&O ShutUp10++
 - DaVinci Resolve
