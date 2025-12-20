@@ -119,7 +119,7 @@ Install these from the Microsoft Store or their websites:
 - Office softwares
 - Wise Memory Optimizer
 - VLC
-- Google Drive Desktop
+- Google Drive Desktop/Dropbox
 - Discord
 - Zalo
 - 1.1.1.1 (Cloudflare WARP)
