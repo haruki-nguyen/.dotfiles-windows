@@ -2,11 +2,11 @@
 
 ## 1. Purpose
 
-This repository stores your Windows dotfiles and configuration. Instead of running a full installer, you will:
+This repository stores my Windows dotfiles and configuration.
 
-- install required tools manually
-- set up your environment step-by-step
-- create clean, reliable automation scripts later
+- Install required tools manually
+- Set up my environment step-by-step
+- Create clean, reliable automation scripts later
 
 ---
 
@@ -55,7 +55,6 @@ scoop install syncthing
 scoop install extras/everything
 scoop install extras/keepassxc
 scoop install python
-scoop install nodejs
 scoop install gcc
 ```
 
@@ -66,13 +65,7 @@ winget install Microsoft.WindowsTerminal -e --accept-source-agreements --accept-
 winget install 9N3HDTNCF6Z8 -e --accept-source-agreements --accept-package-agreements
 ```
 
-### 3.4 Optional NPM Tools
-
-```ps1
-npm install -g @google/gemini-cli
-```
-
-### 3.5 WSL Setup (optional)
+### 3.4 WSL Setup (optional)
 
 ```ps1
 wsl --install -d Ubuntu-22.04
@@ -88,7 +81,7 @@ wsl --install -d Ubuntu-22.04
 
 ```ps1
 mkdir "$env:USERPROFILE/.ssh" -Force
-ssh-keygen -t ed25519 -C "<your email>" -f "$env:USERPROFILE/.ssh/id_ed25519"
+ssh-keygen -t ed25519 -C "<my email>" -f "$env:USERPROFILE/.ssh/id_ed25519"
 ```
 
 Add the public key to GitHub, then verify:
@@ -117,26 +110,19 @@ Repeat for any additional config files.
 Install these from the Microsoft Store or their websites:
 
 - Office softwares
-- VLC
-- Google Drive Desktop/Dropbox
+- Dropbox
 - Discord
 - Zalo
 - 1.1.1.1 (Cloudflare WARP)
 - Google Quick Share
 - Wintoys
 - O&O ShutUp10++
-- DaVinci Resolve
+- Shotcut/Kdenlive.
+- GIMP
 - Iriun Webcam
 - SoundWire Server
-- GIMP
 - Spotify
 - Zotero, with Better BibTex plugin for automatically exportation.
-
-### Game Development Tools
-
-- Unity
-- .NET SDK
-- Claude Desktop (for MCP)
 
 ### Unikey Setup
 
@@ -148,7 +134,7 @@ Win + R → shell:startup
 
 ---
 
-## 7. Updating Your System Manually
+## 7. Updating my System Manually
 
 ### Update Scoop
 
@@ -188,26 +174,11 @@ git submodule update --remote
 ```txt
 .dotfiles-windows/
 ├── .config/           # Configs
-├── installers/        # (OLD / NOT USED)
-├── scripts/           # For future automation
+├── scripts/           # For automation
 ├── shared-dotfiles/   # Submodule
 ├── .gitconfig
 └── README.md
 ```
-
----
-
-## 10. Future Automation (recommended)
-
-After your environment is stable, create simple scripts to automate:
-
-- installing Scoop + buckets
-- installing core apps
-- linking dotfiles
-- WSL setup
-- updates & cleanup
-
-Keep each script small and testable (no monolithic installer).
 
 ---
 
