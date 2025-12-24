@@ -109,6 +109,7 @@ Repeat for any additional config files.
 
 Install these from the Microsoft Store or their websites:
 
+- MS Edge.
 - Office softwares
 - Dropbox
 - Discord
