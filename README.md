@@ -122,7 +122,6 @@ Install these from the Microsoft Store or their websites:
 - Iriun Webcam
 - SoundWire Server
 - Spotify
-- Zotero, with Better BibTex plugin for automatically exportation.
 
 ### Unikey Setup
 
