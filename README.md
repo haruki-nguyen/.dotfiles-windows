@@ -62,7 +62,6 @@ scoop install gcc
 
 ```ps1
 winget install Microsoft.WindowsTerminal -e --accept-source-agreements --accept-package-agreements
-winget install 9N3HDTNCF6Z8 -e --accept-source-agreements --accept-package-agreements
 ```
 
 ### 3.4 WSL Setup (optional)
