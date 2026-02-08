@@ -108,7 +108,7 @@ Repeat for any additional config files.
 
 Install these from the Microsoft Store or their websites:
 
-- MS Edge.
+- MS Edge
 - Office softwares
 - Dropbox
 - Discord
@@ -117,11 +117,12 @@ Install these from the Microsoft Store or their websites:
 - Google Quick Share
 - Wintoys
 - O&O ShutUp10++
-- Shotcut/Kdenlive.
+- Shotcut/Kdenlive
 - GIMP
 - Iriun Webcam
 - SoundWire Server
 - Spotify
+- [Dropshelf](https://apps.microsoft.com/detail/9MZPC6P14L7N?hl=en-us&gl=VN&ocid=pdpshare)
 
 ### Unikey Setup
 
