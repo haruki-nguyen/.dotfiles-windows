@@ -113,6 +113,7 @@ Install these from the Microsoft Store or their websites:
 - Dropbox
 - Discord
 - Zalo
+- Signal
 - 1.1.1.1 (Cloudflare WARP)
 - Google Quick Share
 - Wintoys
