@@ -110,7 +110,8 @@ Install these from the Microsoft Store or their websites:
 
 - MS Edge
 - Office softwares
-- Dropbox
+- Dropbox/Drive desktop
+- TradingView
 - Discord
 - Zalo
 - Signal
