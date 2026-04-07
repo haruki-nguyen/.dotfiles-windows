@@ -46,7 +46,6 @@ Put [SyncthingHidden.vbs](scripts\SyncthingHideen.vbs) inside `shell:startup` to
 ```ps1
 scoop install git
 scoop install extras/vscode
-scoop install extras/googlechrome
 scoop install extras/obsidian
 scoop install extras/powertoys
 scoop install extras/flow-launcher
@@ -55,7 +54,6 @@ scoop install syncthing
 scoop install extras/everything
 scoop install extras/keepassxc
 scoop install python
-scoop install gcc
 ```
 
 ### 3.3 Install Apps via Winget
@@ -110,7 +108,7 @@ Install these from the Microsoft Store or their websites:
 
 - MS Edge
 - Office softwares
-- Dropbox/Drive desktop
+- Drive desktop
 - TradingView
 - Discord
 - Zalo
@@ -119,7 +117,6 @@ Install these from the Microsoft Store or their websites:
 - Google Quick Share
 - Wintoys
 - O&O ShutUp10++
-- Shotcut/Kdenlive
 - GIMP
 - Iriun Webcam
 - SoundWire Server
