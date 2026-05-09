@@ -33,10 +33,19 @@
       "colorScheme": "One Half Dark",
       "cursorShape": "filledBox",
       "elevate": false,
+      "font": {
+        "size": 16
+      },
       "padding": "10",
       "showMarksOnScrollbar": true
     },
     "list": [
+      {
+        "guid": "{7efe049a-f1c9-52e9-9cb4-10fc2a55eb67}",
+        "hidden": false,
+        "name": "Ubuntu",
+        "source": "Microsoft.WSL"
+      },
       {
         "commandline": "%SystemRoot%\\System32\\WindowsPowerShell\\v1.0\\powershell.exe",
         "guid": "{61c54bbd-c2c6-5271-96e7-009a87ff44bf}",
@@ -54,6 +63,24 @@
         "hidden": false,
         "name": "Azure Cloud Shell",
         "source": "Windows.Terminal.Azure"
+      },
+      {
+        "guid": "{574e775e-4f2a-5b96-ac1e-a2962a402336}",
+        "hidden": false,
+        "name": "PowerShell",
+        "source": "Windows.Terminal.PowershellCore"
+      },
+      {
+        "guid": "{2d505439-b895-58a3-8aa9-4342db58d065}",
+        "hidden": false,
+        "name": "Developer Command Prompt for VS 18",
+        "source": "Windows.Terminal.VisualStudio"
+      },
+      {
+        "guid": "{4c9ab781-8726-5ddf-9230-8ce5a10d7a69}",
+        "hidden": false,
+        "name": "Developer PowerShell for VS 18",
+        "source": "Windows.Terminal.VisualStudio"
       }
     ]
   },
