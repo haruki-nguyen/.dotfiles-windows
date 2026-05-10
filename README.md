@@ -121,7 +121,6 @@ Install these from the Microsoft Store or their websites:
 - Iriun Webcam
 - SoundWire Server
 - Spotify
-- [Dropshelf](https://apps.microsoft.com/detail/9MZPC6P14L7N?hl=en-us&gl=VN&ocid=pdpshare)
 - VLC
 
 ### Unikey Setup
