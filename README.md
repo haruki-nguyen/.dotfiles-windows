@@ -53,7 +53,8 @@ scoop install nonportable/protonvpn-np
 scoop install syncthing
 scoop install extras/everything
 scoop install extras/keepassxc
-scoop install python
+scoop install nodejs
+scoop install pnpm
 ```
 
 ### 3.3 Install Apps via Winget
