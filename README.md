@@ -1,187 +1,165 @@
-# Windows Development Environment – Simplified Setup
+# 💻 Windows Development Environment
 
-## 1. Purpose
-
-This repository stores my Windows dotfiles and configuration.
-
-- Install required tools manually
-- Set up my environment step-by-step
-- Create clean, reliable automation scripts later
+A curated collection of dotfiles, scripts, and configurations to transform Windows into a high-control, privacy-focused development environment.
 
 ---
 
-## 2. Quick Start
+## 1. Prerequisites & Foundation
 
-### Clone the repository with submodules
+Before doing anything else, set the execution policy to allow scripts and clone this repository.
+
+### 🔌 Prepare PowerShell
+
+Open PowerShell as Administrator:
+
+```powershell
+Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
+
+```
+
+### 📥 Clone Repository
 
 ```bash
 git clone --recursive <repo-url>
-```
+cd .dotfiles-windows
 
-### Prepare PowerShell
-
-```ps1
-Set-ExecutionPolicy RemoteSigned -Scope CurrentUser
 ```
 
 ---
 
-## 3. Manual Setup Steps
+## 2. System Optimization (WinUtil)
 
-These are the essential tools to install manually.
+I use [Chris Titus’s Windows Utility](https://christitus.com/windows-tool/) to "tame" the OS before installing apps. This handles privacy tweaks and system bloat.
 
-### 3.1 Install Scoop (recommended)
+1. Run the utility: `irm christitus.com/win | iex`
+2. **Tweaks Tab:** Apply recommended desktop/laptop tweaks.
+3. **Config Tab:** Disable Bing Search, Telemetry, and Recommendations.
+4. **Install Tab:** Use this to install core "heavy" apps:
 
-```ps1
+* LibreOffice, VLC, Discord (Vesktop), PowerShell 7, Windows Terminal.
+
+---
+
+## 3. Package Management (Scoop)
+
+I prefer **Scoop** for developer tools because it installs apps into your user directory and keeps the system PATH clean.
+
+### 3.1 Install Scoop & Buckets
+
+```powershell
 iwr -useb get.scoop.sh | iex
 scoop bucket add main
 scoop bucket add extras
 scoop bucket add nonportable
+
 ```
 
-### 3.2 Install Required Apps via Scoop
+### 3.2 Install Core Toolset
 
-Put [SyncthingHidden.vbs](scripts\SyncthingHideen.vbs) inside `shell:startup` to make Syncthing start on startup without opening a window of terminal.
+```powershell
+# Development & Editor
+scoop install git nodejs pnpm jetbrains-mono-nerd-font
 
-```ps1
-scoop install git
-scoop install extras/vscode
-scoop install extras/obsidian
-scoop install extras/powertoys
-scoop install extras/flow-launcher
+# Productivity & Utilities
+scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher
+scoop install extras/everything extras/keepassxc syncthing
+
+# Network & Privacy
 scoop install nonportable/protonvpn-np
-scoop install syncthing
-scoop install extras/everything
-scoop install extras/keepassxc
-scoop install nodejs
-scoop install pnpm
+
 ```
-
-### 3.3 Install Apps via Winget
-
-```ps1
-winget install Microsoft.WindowsTerminal -e --accept-source-agreements --accept-package-agreements
-```
-
-### 3.4 WSL Setup (optional)
-
-```ps1
-wsl --install -d Ubuntu-22.04
-```
-
-### 3.6 JetBrains Mono Font Setup for VSCode
-
-<https://www.jetbrains.com/lp/mono/>
 
 ---
 
-## 4. GitHub SSH Setup (manual)
+## 4. Environment Configuration
 
-```ps1
+### 🔑 GitHub SSH Setup
+
+```powershell
 mkdir "$env:USERPROFILE/.ssh" -Force
-ssh-keygen -t ed25519 -C "<my email>" -f "$env:USERPROFILE/.ssh/id_ed25519"
-```
-
-Add the public key to GitHub, then verify:
-
-```ps1
+ssh-keygen -t ed25519 -C "<your-email>" -f "$env:USERPROFILE/.ssh/id_ed25519"
+# Add id_ed25519.pub to GitHub settings
 ssh -T git@github.com
+
 ```
 
----
+### 🐧 WSL Setup (Optional)
 
-## 5. Link Dotfiles Manually
+```powershell
+wsl --install -d Ubuntu-22.04
 
-Example:
+```
 
-```ps1
-# This command requires Administrator
+### 🔗 Linking Dotfiles (The "Dot" Part)
+
+Link your configurations from the repo to your user profile.
+
+```powershell
+# Example: Git Config (Run as Admin)
 New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.gitconfig" -Target "$env:USERPROFILE/.dotfiles-windows/.gitconfig" -Force
-```
 
-Repeat for any additional config files.
-
----
-
-## 6. Manual Post-Install Apps
-
-Install these from the Microsoft Store or their websites:
-
-- MS Edge
-- Office softwares
-- Drive desktop
-- TradingView
-- Discord
-- Zalo
-- Signal
-- 1.1.1.1 (Cloudflare WARP)
-- Google Quick Share
-- Wintoys
-- O&O ShutUp10++
-- GIMP
-- Iriun Webcam
-- SoundWire Server
-- Spotify
-- VLC
-
-### Unikey Setup
-
-Copy Unikey to a folder, then add to Startup:
-
-```txt
-Win + R → shell:startup
 ```
 
 ---
 
-## 7. Updating my System Manually
+## 5. Manual & GUI Apps
 
-### Update Scoop
+Some apps are better managed via the Microsoft Store or standalone installers:
 
-```ps1
-scoop update
+* **Communication:** Zalo
+* **Networking:** 1.1.1.1 (Cloudflare WARP)
+* **File Sync:** Google Drive, Google Quick Share
+* **System Tools:** Wintoys, VeraCrypt
+* **Hardware:** Iriun Webcam, SoundWire Server
+
+### ⌨️ Unikey & Startup Tricks
+
+* **Unikey:** Copy the folder to your preferred location. Press `Win + R` → type `shell:startup` → Paste a shortcut to Unikey here.
+* **Syncthing:** To run silently, copy `scripts\SyncthingHidden.vbs` to `shell:startup`.
+
+---
+
+## 6. Maintenance & Updates
+
+Keep the environment fresh with these commands:
+
+### Update Packages
+
+```powershell
+# Scoop
 scoop update *
+
+# Winget (for apps installed via WinUtil/Store)
+winget upgrade --all --accept-source-agreements
+
 ```
 
-### Update Winget
+### Cleanup
 
-```ps1
-winget upgrade --all --accept-source-agreements --accept-package-agreements
-```
-
-### Cleanup (manual)
-
-- Clear Recycle Bin
-- Clear Temp folder (`%temp%`)
-- Scoop cleanup:
-
-```ps1
+```powershell
+# Remove old Scoop versions/cache
+scoop cleanup *
 scoop cache rm *
-```
 
----
-
-## 8. Git Submodules
-
-```bash
+# Update Submodules
 git submodule update --remote
+
 ```
 
 ---
 
-## 9. Repo Layout
+## 📁 Repository Layout
 
-```txt
+```text
 .dotfiles-windows/
-├── .config/           # Configs
-├── scripts/           # For automation
-├── shared-dotfiles/   # Submodule
-├── .gitconfig
+├── .config/           # Application-specific configs (VSCode, etc.)
+├── scripts/           # VBS and automation scripts
+├── shared-dotfiles/   # Cross-platform submodule
+├── .gitconfig         # Global git settings
 └── README.md
+
 ```
 
----
-
-## 11. License
+## License
 
 MIT
