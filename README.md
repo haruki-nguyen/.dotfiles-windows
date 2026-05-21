@@ -106,7 +106,7 @@ New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.gitconfig" -Target "$en
 
 Some apps are better managed via the Microsoft Store or standalone installers:
 
-* **Communication:** Zalo
+* **Communication:** Zalo, WhatsApp.
 * **Networking:** 1.1.1.1 (Cloudflare WARP)
 * **File Sync:** Google Drive, Google Quick Share
 * **System Tools:** Wintoys, VeraCrypt
