@@ -1,0 +1,47 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "disable_ai": true,
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false // Disables tracking/telemetry just like your chat.disableAIFeatures block
+  },
+  "vim_mode": true, // Keeps your Vim mode active
+  "ui_font_size": 16,
+  "buffer_font_size": 16, // Matched to your VS Code "editor.fontSize": 16
+  "buffer_font_family": "JetBrains Mono", // Ported from your VS Code editor.fontFamily
+  "theme": {
+    "mode": "system",
+    "light": "One Light",
+    "dark": "One Dark"
+  },
+  "format_on_save": "on", // Ported from your "editor.formatOnSave": true
+  "cursor_blink": true, // Mimics your "editor.cursorBlinking": "solid"
+
+  // Porting your language specific formatters (Prettier equivalent in Zed)
+  "languages": {
+    "CSS": {
+      "formatter": "prettier"
+    },
+    "JavaScript": {
+      "formatter": "prettier"
+    },
+    "JSON": {
+      "formatter": "prettier"
+    },
+    "Markdown": {
+      "formatter": "prettier"
+    }
+  },
+  // Replicates your custom Vim plugin settings in VS Code
+  "vim": {
+    "use_system_clipboard": "always", // Ported from "vim.useSystemClipboard": true
+    "use_smartcase_find": true // Ported from "vim.smartcase": true
+  }
+}

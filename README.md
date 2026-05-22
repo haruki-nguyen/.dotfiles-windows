@@ -61,8 +61,9 @@ scoop bucket add nonportable
 scoop install git nodejs pnpm jetbrains-mono-nerd-font
 
 # Productivity & Utilities
-scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher wezterm
+scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher
 scoop install extras/everything extras/keepassxc syncthing harmonoid hourglass
+scoop install wezterm zen-browser zed
 
 # Network & Privacy
 scoop install nonportable/protonvpn-np

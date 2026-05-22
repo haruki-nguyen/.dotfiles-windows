@@ -1,0 +1,24 @@
+// Zed keymap
+//
+// For information on binding keys, see the Zed
+// documentation: https://zed.dev/docs/key-bindings
+//
+// To see the default key bindings run `zed: open default keymap`
+// from the command palette.
+[
+  // ===== File Explorer Vim Navigation =====
+  {
+    "context": "ProjectPanel && !menu",
+    "bindings": {
+      "h": "project_panel::CollapseSelectedEntry", // Ported from list.collapse
+      "l": "project_panel::ExpandSelectedEntry", // Ported from list.select
+    },
+  },
+  // ===== Buffer Management & Zen Mode =====
+  {
+    "context": "Editor && VimControl && !menu",
+    "bindings": {
+      "ctrl-w": "pane::CloseActiveItem", // NVChad style close buffer from your config
+    },
+  },
+]
