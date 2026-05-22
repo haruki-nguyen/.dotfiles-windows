@@ -11,7 +11,7 @@ local config = wezterm.config_builder()
 
 -- Emulate Windows Terminal Font (Requires Cascadia Code to be installed)
 config.font = wezterm.font('JetBrains Mono', { weight = 'Regular' })
-config.font_size = 11.0
+config.font_size = 13.0
 
 -- A clean, high-contrast dark theme similar to Windows Terminal's default
 -- config.color_scheme = 'Campbell' 
