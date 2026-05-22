@@ -61,8 +61,8 @@ scoop bucket add nonportable
 scoop install git nodejs pnpm jetbrains-mono-nerd-font
 
 # Productivity & Utilities
-scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher
-scoop install extras/everything extras/keepassxc syncthing harmonoid
+scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher wezterm
+scoop install extras/everything extras/keepassxc syncthing harmonoid hourglass
 
 # Network & Privacy
 scoop install nonportable/protonvpn-np
@@ -97,6 +97,8 @@ Link your configurations from the repo to your user profile.
 ```powershell
 # Example: Git Config (Run as Admin)
 New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.gitconfig" -Target "$env:USERPROFILE/.dotfiles-windows/.gitconfig" -Force
+
+New-Item -ItemType SymbolicLink -Path "$env:USERPROFILE/.wezterm.lua" -Target "$env:USERPROFILE/.dotfiles-windows/.config/WezTerm/.wezterm.lua" -Force
 
 ```
 
