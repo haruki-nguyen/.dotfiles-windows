@@ -62,7 +62,7 @@ scoop install git nodejs pnpm jetbrains-mono-nerd-font
 
 # Productivity & Utilities
 scoop install extras/vscode extras/obsidian extras/powertoys extras/flow-launcher
-scoop install extras/everything extras/keepassxc syncthing
+scoop install extras/everything extras/keepassxc syncthing harmonoid
 
 # Network & Privacy
 scoop install nonportable/protonvpn-np
