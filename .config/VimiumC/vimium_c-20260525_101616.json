@@ -1,0 +1,40 @@
+{
+	"name": "Vimium C",
+	"@time": "5/25/2026, 10:16:16 AM",
+	"time": 1779678976345,
+	"environment": {
+		"extension": "2.12.3",
+		"platform": "win",
+		"firefox": 151
+	},
+	"grabBackFocus": true,
+	"keyLayout": 2,
+	"keyMappings": [
+		"#!no-check",
+		"# Prevent accidental closes by requiring Shift",
+		"unmap x",
+		"map X removeTab",
+		"",
+		"# Use lowercase 'x' to restore the last closed tab",
+		"map x restoreTab",
+		"",
+		"# Quick tab navigation",
+		"map J previousTab",
+		"map K nextTab",
+		"",
+		"# Toggle back and forth between two tabs",
+		"map <a-tab> visitPreviousTab",
+		""
+	],
+	"keyupTime": 100,
+	"linkHintCharacters": "asdghklqwerty",
+	"scrollStepSize": 120,
+	"vimSync": true,
+	"vomnibarOptions": {
+		"actions": "",
+		"maxMatches": 10,
+		"queryInterval": 75,
+		"sizes": "77,3,44,0.8,1944",
+		"styles": "mono-url"
+	}
+}
